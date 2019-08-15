@@ -10737,3 +10737,8 @@ yargs@^3.10.0:
     string-width "^1.0.1"
     window-size "^0.1.4"
     y18n "^3.2.0"
+
+zustand@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/zustand/-/zustand-1.0.4.tgz#ae61fe6c8535c1e423fdbfac3422b2f0113d1fe5"
+  integrity sha512-unSDAyctYddVNk/TBpVtzk5zyj3WtBEuyITBodeXHRxAd/I9HgIn9AdWj9TD6EtjWGKFXbP/cs+5UI2OC/gZRw==
