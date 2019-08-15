@@ -1,7 +1,7 @@
 import create from 'zustand'
 import { User } from 'firebase';
 
-interface Credentials {
+export interface Credentials {
     accessToken: String
 }
 

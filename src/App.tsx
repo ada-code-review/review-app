@@ -1,14 +1,16 @@
 import withFirebaseAuth, { WrappedComponentProps } from 'react-with-firebase-auth'
 import styled from '@emotion/styled';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
 import * as firebase from 'firebase/app';
 import 'firebase/auth';
 import firebaseConfig from './firebaseConfig';
 import React from 'react';
-import BrandLogo from './ada-logo-white.svg';
+import { Nav } from './NavBar';
+import { SignInPage } from './SignInPage';
+import { FeedbackPage } from './FeedbackPage';
+import { ListPage } from './ListPage';
 
-import { useUserStore, UserState } from './stores/UserStore';
-
+import { useUserStore, UserState, Credentials } from './stores/UserStore';
 
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 
@@ -16,49 +18,19 @@ const Root = styled(`div`)({
   fontFamily: `Open Sans, sans-serif`,
 });
 
-interface Credential {
-  accessToken: string,
-}
-
-interface AppProps extends WrappedComponentProps {
-  signInWithGithub: () => Promise<{ user: firebase.User, credential: Credential }>,
-}
-
-const NavContainer = styled(`div`)({
-  backgroundColor: `#5A848D`,
-  display: `flex`,
-  alignItems: `center`,
-  justifyContent: `space-between`,
-  height: 90,
-  color: `white`,
-  paddingLeft: 50,
-  paddingRight: 50,
+const Main = styled(`main`)({
+  paddingLeft: 125,
+  paddingRight: 125,
+  paddingTop: 60,
+  paddingBottom: 60,
 });
 
-const Nav = ({ signOut }: { signOut: () => void }) => {
-  const user = useUserStore((state) => state.user)
-  const firstName = user && user.displayName!.split(` `)[0];
-  return (
-    <NavContainer>
-      <a href='https://adadevelopersacademy.org'>
-        <img src={BrandLogo} height={50} width={250}/>
-      </a>
-      <div></div>{user && <div>Hi, {firstName} <button onClick={signOut}>Sign out</button></div>}
-    </NavContainer>
-  );
-};
+interface AppProps extends WrappedComponentProps {
+  signInWithGithub: () => Promise<{ user: firebase.User, credential: Credentials }>,
+}
 
-const SignInPage = ({ signIn }: {signIn: () => void }) => (
-  <div>
-    <p>Please sign in.</p>
-    <button onClick={signIn}>Sign in with Github</button>
-  </div>
-);
-
-const MainPage = () => (
-  <div>
-    This is the main page
-  </div>
+const RedirectToHomePage = () => (
+  <Redirect to='/'/>
 )
 
 const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
@@ -76,18 +48,22 @@ const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
   }
 
   return (
-    <Root>
-      <Router>
+    <Router>
+      <Root>
         <Nav signOut={signOutUser}/>
-        {userStore.user ? (
-          <Switch>
-            <Route render={() => <MainPage />}/>
-          </Switch>
-        ): (
-          <SignInPage signIn={signIn}/>
-        )}
-      </Router>
-    </Root>
+        <Main>
+          {userStore.user ? (
+            <Switch>
+              <Route path='/' exact component={ListPage}/>
+              <Route path='/feedback/:id' component={FeedbackPage}/>
+              <Route component={RedirectToHomePage}/>
+            </Switch>
+          ): (
+            <SignInPage signIn={signIn}/>
+          )}
+        </Main>
+      </Root>
+    </Router>
   );
 }
 
