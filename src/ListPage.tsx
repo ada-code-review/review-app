@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useUserStore, UserState } from './stores/UserStore';
 import { Header1, BodyText, BodyTextLink } from './sharedStyleComponents';
 import { formatSearchQuery, useFetchFromGithub } from './fetchFromGithub';
