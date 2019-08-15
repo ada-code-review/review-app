@@ -5,12 +5,10 @@ import * as firebase from 'firebase/app';
 import 'firebase/auth';
 import firebaseConfig from './firebaseConfig';
 import React from 'react';
-<<<<<<< HEAD
 import BrandLogo from './ada-logo-white.svg';
 
-=======
-import { useUserStore, UserState } from './stores/User';
->>>>>>> Adds user store with auth token
+import { useUserStore, UserState } from './stores/UserStore';
+
 
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 
@@ -37,14 +35,15 @@ const NavContainer = styled(`div`)({
   paddingRight: 50,
 });
 
-<<<<<<< HEAD
-const Nav = ({ userName, signOut }: { userName: string | null, signOut: () => void }) => {
+const Nav = ({ signOut }: { signOut: () => void }) => {
+  const user = useUserStore((state) => state.user)
+  const firstName = user && user.displayName!.split(` `)[0];
   return (
     <NavContainer>
       <a href='https://adadevelopersacademy.org'>
         <img src={BrandLogo} height={50} width={250}/>
       </a>
-      <div></div>{userName && <div>Hi, {userName.split(` `)[0]} <button onClick={signOut}>Sign out</button></div>}
+      <div></div>{user && <div>Hi, {firstName} <button onClick={signOut}>Sign out</button></div>}
     </NavContainer>
   );
 };
@@ -56,34 +55,33 @@ const SignInPage = ({ signIn }: {signIn: () => void }) => (
   </div>
 );
 
-const MainPage = ({ user, credential }: {
-  user?: firebase.User,
-  credential: Credential | null,
-}) => (
-  <div>This is the main page</div>
+const MainPage = () => (
+  <div>
+    This is the main page
+  </div>
 )
 
-const App: React.FC<AppProps> = ({ user, signOut, signInWithGithub }) => {
-  const [credential, setCredential] = React.useState<Credential | null>(null);
+const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
+  const userStore: UserState = useUserStore();
+
   function signIn() {
     return signInWithGithub()
       .then(({user, credential}) => {
-        setCredential(credential);
+        userStore.signIn(user, credential);
       });
   }
 
   function signOutUser() {
-    signOut();
-    setCredential(null);
+    userStore.signOut();
   }
 
   return (
     <Root>
       <Router>
-        <Nav userName={user ? user.displayName : null} signOut={signOutUser}/>
-        {user ? (
+        <Nav signOut={signOutUser}/>
+        {userStore.user ? (
           <Switch>
-            <Route render={() => <MainPage user={user} credential={credential} />}/>
+            <Route render={() => <MainPage />}/>
           </Switch>
         ): (
           <SignInPage signIn={signIn}/>
@@ -92,41 +90,6 @@ const App: React.FC<AppProps> = ({ user, signOut, signInWithGithub }) => {
     </Root>
   );
 }
-=======
-interface AppProps extends WrappedComponentProps {
-  signInWithGithub: () => Promise<any>,
-}
-
-const App: React.FC<AppProps> = ({ user, signOut, signInWithGithub }) => {
-  const userStore: UserState = useUserStore();
-
-  function signIn() {
-    return signInWithGithub()
-      .then(({user, credential}) => {
-        console.log("Your auth token is:", credential.accessToken)
-        userStore.signIn(user, credential);
-      });
-  }
-
-  return (
-    <Root>
-      <Header>
-        <code>Token: {userStore.accessToken}</code>
-        {console.log(userStore)}
-        {
-          user
-            ? <p>Hello, {user.displayName}</p>
-            : <p>Please sign in.</p>
-        }
-        {
-          user
-            ? <button onClick={signOut}>Sign out</button>
-            : <button onClick={signIn}>Sign in with Github</button>
-        }
-      </Header>
-    </Root>
-)};
->>>>>>> Adds user store with auth token
 
 const firebaseAppAuth = firebaseApp.auth();
 const providers = {
