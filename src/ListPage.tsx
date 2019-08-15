@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useUserStore, UserState } from './stores/UserStore';
 import { Header1, BodyText, BodyTextLink } from './sharedStyleComponents';
-import { useGithubStore, GithubState } from './stores/GithubStore';
+import { formatSearchQuery, useFetchFromGithub } from './fetchFromGithub';
+import { GITHUB_ORGS } from './constants';
 
 interface PrListDataBackend {
     id: string, // unique PR ID across all of github
@@ -39,8 +40,8 @@ const InstructorListPage = () => {
 };
 
 const VolunteerListPage = () => {
-    const githubStore: GithubState = useGithubStore();
-    useEffect(() => { githubStore.fetchOpenPRs() }, []);
+    const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS});
+    const {data, error, isLoading} = useFetchFromGithub(`search/issues?q=${query}`);
 
     return (
         <div>
@@ -51,7 +52,7 @@ const VolunteerListPage = () => {
                 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
                 laboris nisi ut aliquip ex ea commodo consequat. <BodyTextLink>Read more</BodyTextLink>
             </BodyText>
-            Open PRs: {githubStore.openPRs.isLoading ? '...loading...' : githubStore.openPRs.data.length}
+            Open PRs: {isLoading ? '...loading...' : data && data.items.length + " of " + data.total_count}
         </div>
     );
 };
