@@ -11,7 +11,7 @@ import BrandLogo from './ada-logo-white.svg';
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 
 const Root = styled(`div`)({
-
+  fontFamily: `Open Sans, sans-serif`,
 });
 
 interface Credential {
@@ -29,6 +29,8 @@ const NavContainer = styled(`div`)({
   justifyContent: `space-between`,
   height: 90,
   color: `white`,
+  paddingLeft: 50,
+  paddingRight: 50,
 });
 
 const Nav = ({ userName, signOut }: { userName: string | null, signOut: () => void }) => {
