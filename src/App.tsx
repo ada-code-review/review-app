@@ -28,34 +28,29 @@ const Logo = styled(`img`)({
   pointerEvents: `none`,
 });
 
-class App extends React.Component {
-  render() {
-    const {
-      user,
-      signOut,
-      signInWithGithub,
-    } = this.props;
-
-
-      return (
-        <Root>
-        <Header>
-          <Logo src={logo} alt="logo" />
-          {
-            user 
-              ? <p>Hello, {user.displayName}</p>
-              : <p>Please sign in.</p>
-          }
-          {
-            user
-              ? <button onClick={signOut}>Sign out</button>
-              : <button onClick={signInWithGithub}>Sign in with Github</button>
-          }
-        </Header>
-      </Root>
-    );
-  }
+interface AppProps {
+  user?: firebase.User,
+  signOut: () => void,
+  signInWithGithub: () => void,
 }
+
+const App: React.FC<AppProps> = ({ user, signOut, signInWithGithub }) => (
+  <Root>
+    <Header>
+      <Logo src={logo} alt="logo" />
+      {
+        user 
+          ? <p>Hello, {user.displayName}</p>
+          : <p>Please sign in.</p>
+      }
+      {
+        user
+          ? <button onClick={signOut}>Sign out</button>
+          : <button onClick={signInWithGithub}>Sign in with Github</button>
+      }
+    </Header>
+  </Root>
+);
 
 const firebaseAppAuth = firebaseApp.auth();
 const providers = {
