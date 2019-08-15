@@ -10,7 +10,7 @@ import { SignInPage } from './SignInPage';
 import { FeedbackPage } from './FeedbackPage';
 import { ListPage } from './ListPage';
 
-import { useUserStore, UserState, Credentials } from './stores/UserStore';
+import { useUserStore, UserState, Credentials, UserRole } from './stores/UserStore';
 
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 
@@ -31,7 +31,16 @@ interface AppProps extends WrappedComponentProps {
 
 const RedirectToHomePage = () => (
   <Redirect to='/'/>
-)
+);
+
+function retrieveUserRole(credential: Credentials) {
+  // mocked for now
+  return new Promise<UserRole>((resolve) => {
+    setTimeout(() => {
+      resolve(`instructors`);
+    }, 1000);
+  });
+}
 
 const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
   const userStore: UserState = useUserStore();
@@ -39,7 +48,13 @@ const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
   function signIn() {
     return signInWithGithub()
       .then(({user, credential}) => {
-        userStore.signIn(user, credential);
+        retrieveUserRole(credential).then((role) => {
+          userStore.signIn({
+            user,
+            credentials: credential,
+            role,
+          });
+        });
       });
   }
 
