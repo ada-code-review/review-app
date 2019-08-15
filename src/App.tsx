@@ -9,13 +9,14 @@ import { Nav } from './NavBar';
 import { SignInPage } from './SignInPage';
 import { FeedbackPage } from './FeedbackPage';
 import { ListPage } from './ListPage';
+import { fonts } from './designTokens';
 
 import { useUserStore, UserState, Credentials, UserRole } from './stores/UserStore';
 
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 
 const Root = styled(`div`)({
-  fontFamily: `Open Sans, sans-serif`,
+  fontFamily: fonts.openSans,
 });
 
 const Main = styled(`main`)({
@@ -37,7 +38,7 @@ function retrieveUserRole(credential: Credentials) {
   // mocked for now
   return new Promise<UserRole>((resolve) => {
     setTimeout(() => {
-      resolve(`instructors`);
+      resolve(`volunteers`);
     }, 1000);
   });
 }

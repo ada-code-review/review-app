@@ -3,14 +3,15 @@ import { Link } from 'react-router-dom';
 import styled from '@emotion/styled';
 import BrandLogo from './ada-logo-white.svg';
 import { useUserStore } from './stores/UserStore';
+import { colors } from './designTokens';
 
 const NavContainer = styled(`nav`)({
-  backgroundColor: `#5A848D`,
+  backgroundColor: colors.teal100,
   display: `flex`,
   alignItems: `center`,
   justifyContent: `space-between`,
   height: 90,
-  color: `white`,
+  color: colors.white,
   paddingLeft: 50,
   paddingRight: 50,
 });
