@@ -1,5 +1,6 @@
-import withFirebaseAuth from 'react-with-firebase-auth'
+import withFirebaseAuth, { WrappedComponentProps } from 'react-with-firebase-auth'
 import styled from '@emotion/styled';
+import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
 import * as firebase from 'firebase/app';
 import 'firebase/auth';
 import firebaseConfig from './firebaseConfig';
@@ -28,29 +29,46 @@ const Logo = styled(`img`)({
   pointerEvents: `none`,
 });
 
-interface AppProps {
-  user?: firebase.User,
-  signOut: () => void,
-  signInWithGithub: () => void,
+interface Credential {
+  accessToken: string,
 }
 
-const App: React.FC<AppProps> = ({ user, signOut, signInWithGithub }) => (
-  <Root>
-    <Header>
-      <Logo src={logo} alt="logo" />
-      {
-        user 
-          ? <p>Hello, {user.displayName}</p>
-          : <p>Please sign in.</p>
-      }
-      {
-        user
-          ? <button onClick={signOut}>Sign out</button>
-          : <button onClick={signInWithGithub}>Sign in with Github</button>
-      }
-    </Header>
-  </Root>
-);
+interface AppProps extends WrappedComponentProps {
+  signInWithGithub: () => Promise<{ user: firebase.User, credential: Credential }>,
+}
+
+const App: React.FC<AppProps> = ({ user, signOut, signInWithGithub }) => {
+  const [credential, setCredential] = React.useState<Credential | null>(null);
+  function signIn() {
+    return signInWithGithub()
+      .then(({user, credential}) => {
+        setCredential(credential);
+      });
+  }
+
+  function signOutUser() {
+    signOut();
+    setCredential(null);
+  }
+
+  return (
+    <Root>
+      <Header>
+        <Logo src={logo} alt="logo" />
+        {
+          user
+            ? <p>Hello, {user.displayName}</p>
+            : <p>Please sign in.</p>
+        }
+        {
+          user
+            ? <button onClick={signOutUser}>Sign out</button>
+            : <button onClick={signIn}>Sign in with Github</button>
+        }
+      </Header>
+    </Root>
+  );
+}
 
 const firebaseAppAuth = firebaseApp.auth();
 const providers = {
@@ -60,4 +78,4 @@ const providers = {
 export default withFirebaseAuth({
   providers,
   firebaseAppAuth,
-})(App);
+})(App as any);
