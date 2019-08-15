@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useUserStore, UserState } from './stores/UserStore';
 import { Header1, BodyText, BodyTextLink } from './sharedStyleComponents';
+import { useGithubStore, GithubState } from './stores/GithubStore';
 
 interface PrListDataBackend {
     id: string, // unique PR ID across all of github
@@ -29,14 +30,18 @@ interface PrListData {
     feedbackCommentHref: string | null,
 }
 
-const InstructorListPage = () => (
+const InstructorListPage = () => {
+  return (
     <div>
         <Header1>Student Pull Requests</Header1>
     </div>
-);
+  )
+};
 
 const VolunteerListPage = () => {
-    
+    const githubStore: GithubState = useGithubStore();
+    useEffect(() => { githubStore.fetchOpenPRs() }, []);
+
     return (
         <div>
             <Header1>Assigned Pull Requests</Header1>
@@ -46,6 +51,7 @@ const VolunteerListPage = () => {
                 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
                 laboris nisi ut aliquip ex ea commodo consequat. <BodyTextLink>Read more</BodyTextLink>
             </BodyText>
+            Open PRs: {githubStore.openPRs.isLoading ? '...loading...' : githubStore.openPRs.data.length}
         </div>
     );
 };
