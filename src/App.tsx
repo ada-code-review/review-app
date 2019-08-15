@@ -1,6 +1,6 @@
 import withFirebaseAuth, { WrappedComponentProps } from 'react-with-firebase-auth'
 import styled from '@emotion/styled';
-import { BrowserRouter as Router, Route, Switch, Redirect, RouteComponentProps } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
 import * as firebase from 'firebase/app';
 import 'firebase/auth';
 import firebaseConfig from './firebaseConfig';
@@ -10,7 +10,7 @@ import { SignInPage } from './SignInPage';
 import { FeedbackPage } from './FeedbackPage';
 import { ListPage } from './ListPage';
 
-import { useUserStore, UserState } from './stores/UserStore';
+import { useUserStore, UserState, Credentials } from './stores/UserStore';
 
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 
@@ -26,7 +26,7 @@ const Main = styled(`main`)({
 });
 
 interface AppProps extends WrappedComponentProps {
-  signInWithGithub: () => Promise<{ user: firebase.User, credential: Credential }>,
+  signInWithGithub: () => Promise<{ user: firebase.User, credential: Credentials }>,
 }
 
 const RedirectToHomePage = () => (

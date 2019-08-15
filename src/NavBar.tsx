@@ -25,7 +25,7 @@ export const Nav = ({ signOut }: { signOut: () => void }) => {
   return (
     <NavContainer>
       <Link to='/'>
-        <img src={BrandLogo} height={50} width={250}/>
+        <img src={BrandLogo} height={50} width={250} alt='Ada logo'/>
       </Link>
       {user && <UserTile userName={user.displayName} signOut={signOut}/>}
     </NavContainer>
