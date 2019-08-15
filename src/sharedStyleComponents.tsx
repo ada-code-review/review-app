@@ -23,4 +23,5 @@ export const BodyTextLink = styled(`a`)({
     fontSize: 16,
     lineHeight: 1.62,
     cursor: `pointer`,
+    textDecoration: `none`,
 });
