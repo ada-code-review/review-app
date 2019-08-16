@@ -213,10 +213,12 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
     const { prBackendData, isLoading } = useFetchPrData(org, repo, prId);
     const prData = prBackendData ? convertToPrData(prBackendData) : null;
     const [feedbackFormText, setFeedbackFormText] = React.useState(feedbackMarkdown);
+    const [grade, setGrade] = React.useState(prData ? prData.grade : null);
 
     React.useEffect(() => {
         setFeedbackFormText(feedbackMarkdown);
-    }, [prId, prData]);
+        setGrade(prData ? grade : null);
+    }, [prId, prData, feedbackMarkdown]);
 
     const handleFeedbackFormInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setFeedbackFormText(e.target.value);
@@ -224,8 +226,9 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
 
     // TODO: make these do something
     const refreshData = () => undefined;
-    const handleGradeChange = (newGrade: Grade) => undefined;
-    const submitFormData = () => undefined; // use POST submitFeedbackUrl
+    const submitFormData = () => {
+
+    };
 
     function getContents() {
         if (isLoading) {
@@ -234,18 +237,19 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
         if (!prData) {
             return <BodyText>Nothing to show here</BodyText>;
         }
+        const prInfo = prData!;
         return (
             <React.Fragment>
                 <Subtitle>{project}</Subtitle>
                 <TitleLayout>
-                    <Title>{prData && prData.label}</Title>
-                    <PrLink href={prData.href} target='_blank'>{prData && prData.href}</PrLink>
+                    <Title>{prInfo.label}</Title>
+                    <PrLink href={prInfo.href} target='_blank'>{prInfo.href}</PrLink>
                 </TitleLayout>
                 <BodyText>
                     Providing complete feedback on a student’s work involves three distinct steps:
                 </BodyText>
                 <StyledOrderedList>
-                    <li>Give inline feedback by <BodyTextLink href={prData.href} target='_blank'>commenting on the pull request on GitHub</BodyTextLink>.</li>
+                    <li>Give inline feedback by <BodyTextLink href={prInfo.href} target='_blank'>commenting on the pull request on GitHub</BodyTextLink>.</li>
                     <li>Edit the markdown field below, providing your feedback on the features listed.</li>
                     <li>Assign an overall grade (green, yellow, red) for this PR.</li>
                 </StyledOrderedList>
@@ -257,15 +261,15 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
                 <FormBottomBar>
                     <FormBottomBarLeft>
                         <CommentIndicator
-                            hasComment={prData && prData.comments > 0}
+                            hasComment={prInfo.comments > 0}
                             refreshData={refreshData}
                         />
                     </FormBottomBarLeft>
                     <FormBottomBarRight>
-                        <GradeSelector grade={prData && prData.grade} onChange={handleGradeChange}/>
+                        <GradeSelector grade={prInfo.grade} onChange={setGrade}/>
                         <Spacer width={20}/>
                         <SubmitButton
-                            disabled={prData && prData.comments == 0}
+                            disabled={prInfo.comments == 0}
                             onClick={submitFormData}
                         >
                             Submit Feedback
