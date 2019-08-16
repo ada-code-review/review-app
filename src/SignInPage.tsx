@@ -42,7 +42,7 @@ const SignInButton = styled(`button`)({
     cursor: `pointer`,
     display: `inline-flex`,
     alignItems: `center`,
-    ':active': {
+    ':hover': {
         backgroundColor: colors.tealDark,
     }
 });

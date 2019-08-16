@@ -4,3 +4,7 @@ export const Spacer = styled(`div`)<{ height?: number | string, width?: number |
     height: height || 0,
     width: width || 0,
 }));
+
+export const InlineSpacer = styled(Spacer)({
+    display: `inline-block`,
+});
