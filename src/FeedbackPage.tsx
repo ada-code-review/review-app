@@ -6,7 +6,7 @@ import { faCircle } from '@fortawesome/free-regular-svg-icons'
 import { faCheckCircle, faCaretDown } from '@fortawesome/free-solid-svg-icons';
 import { Main, Header1, BodyText, BodyTextLink, BodyOL } from './sharedStyleComponents';
 import { useFetchFromGithub, useFetchText, fetchFromGithub } from './fetchFromGithub';
-import { Grade } from './fetchFromFirebase';
+import { Grade, GradeData, AllGradeData, useFetchFromFirebase } from './fetchFromFirebase';
 import { colors, fonts } from './designTokens';
 import { Spacer, InlineSpacer } from './Spacer';
 import { NullableGradeProp, GradeMenu } from './GradeMenu';
@@ -34,6 +34,7 @@ interface PrData {
     comments: number,
     submitFeedbackPath: string,
     grade: Grade | null,
+    setGradeData: (newGradeData: GradeData) => void,
 }
 interface PrBackendData {
     id: number,
@@ -51,21 +52,27 @@ function useFetchFeedbackData(project: string,) {
     return useFetchText(`https://raw.githubusercontent.com/${project}/master/feedback.md`);
 }
 
-function useFetchPrData(org: string, repo: string, prId: string,) {
+function useFetchPrData(org: string, repo: string, prId: string) {
     const path = `repos/${org}/${repo}/pulls/${prId}`
     const {data, error, isLoading} = useFetchFromGithub<PrBackendData>(path);
+    const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase();
     return {
-        prData: data ? convertToPrData(data) : null,
-        isLoading: isLoading,
+        prData: data && grades ? convertToPrData(data, grades, setGradeData) : null,
+        isLoading: isLoading || isLoadingFirebase,
         error
     }
 }
 
-function convertToPrData(prBackendData: PrBackendData): PrData {
+function convertToPrData(
+    prBackendData: PrBackendData,
+    allGradeData: AllGradeData,
+    setGradeData: (prId: number, newData: GradeData) => void,
+): PrData {
     prBackendData.title = prBackendData.title.trim()
     if (prBackendData.title.length > 20) {
         prBackendData.title = `${prBackendData.title.substring(0,20).trim()}...`
     }
+    const gradeData = allGradeData[prBackendData.id];
 
     return {
         id: prBackendData.id,
@@ -74,7 +81,8 @@ function convertToPrData(prBackendData: PrBackendData): PrData {
         authorUsername: prBackendData.user.login,
         comments: prBackendData.review_comments,
         submitFeedbackPath: new URL(prBackendData.comments_url).pathname.slice(1),
-        grade: null, // TODO get grade?
+        grade: gradeData ? gradeData.grade : null,
+        setGradeData: (gradeData: GradeData) => setGradeData(prBackendData.id, gradeData),
     };
 }
 
@@ -181,7 +189,7 @@ const CommentIndicator: React.FC<{ hasComment: boolean, refreshData: () => void 
 
 // TODO: fill out this component
 const GradeSelector: React.FC<{ grade: Grade | null, onChange: (newGrade: Grade) => void}> = ({ grade, onChange }) => (
-    <GradeMenu grade={grade} onSelect={(grade) => console.log(grade)} placement='auto'>
+    <GradeMenu grade={grade} onSelect={onChange} placement='auto'>
         Grade this Pull Request
     </GradeMenu>
 );
@@ -224,10 +232,12 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
     const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     React.useEffect(() => {
-        console.log(`setting to default`);
         setFeedbackFormText(feedbackMarkdown);
-        setGrade(prData ? grade : null);
     }, [prId, prDataId, feedbackMarkdown]);
+
+    React.useEffect(() => {
+        setGrade(prData ? prData.grade : null);
+    }, [prId, prDataId]);
 
     const handleFeedbackFormInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setFeedbackFormText(e.target.value);
@@ -236,7 +246,7 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
     // TODO: make these do something
     const refreshData = () => undefined;
     const submitFormData = () => {
-        if (!prData) {
+        if (!prData || !grade) {
             return;
         }
         setIsSubmitting(true);
@@ -247,8 +257,11 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
             }),
         })
             .then((response) => {
-                // TODO: update firebase here
                 const { html_url } = response as SubmitEndpointResponse;
+                prData.setGradeData({
+                    commentUrl: html_url,
+                    grade,
+                });
                 window.location.href = html_url;
             });
     };
@@ -289,10 +302,10 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
                         />
                     </FormBottomBarLeft>
                     <FormBottomBarRight>
-                        <GradeSelector grade={prInfo.grade} onChange={setGrade}/>
+                        <GradeSelector grade={grade} onChange={setGrade}/>
                         <Spacer width={20}/>
                         <SubmitButton
-                            disabled={prInfo.comments == 0 || isSubmitting}
+                            disabled={prInfo.comments == 0 || isSubmitting || !grade}
                             onClick={submitFormData}
                         >
                             {isSubmitting ? `Submitting...` : `Submit Feedback` }

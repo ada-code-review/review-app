@@ -103,7 +103,7 @@ function useFetchListData() {
     const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS, });
     const {data, error, isLoading} = useFetchFromGithub<ListFetchData>(`search/issues?q=${query}&per_page=100&sort=updated&order=desc`);
 
-    const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase(`/grades/`);
+    const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase();
 
     return {
         prListData: data && data.items || null,
