@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircle } from '@fortawesome/free-regular-svg-icons'
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 import { Main, Header1, BodyText, BodyTextLink, BodyOL } from './sharedStyleComponents';
+import { useFetchText } from './fetchFromGithub';
 import { Grade } from './fetchFromFirebase';
 import { colors, fonts } from './designTokens';
 import { Spacer, InlineSpacer } from './Spacer';
@@ -23,28 +24,12 @@ interface PrData {
     href: string,
     authorUsername: string,
     commentNumber: number,
-    feedbackMarkdown: string,
     grade: Grade | null,
 }
 
-const mockFeedbackMarkdown = `
-**Core Requirements**
-Git hygiene | 
-Comprehension questions | 
-
-**Functionality**
-Click a button to load and view a list of trips | 
-Clicking the "load" button twice does not cause each trip to display twice | 
-Click a trip to load and view trip details | 
-Clicking a different trip loads different details | 
-Open network tab, then fill out a form to reserve a spot | 
-Submitting the form only sends one POST request | 
-Errors are reported to the user | 
-Site is clearly laid out and easy to navigate | 
-
-**Under the Hood**
-Callback functions are not nested more than 2 levels deep |
-`;
+function useFetchFeedbackData(project: string) {
+    return useFetchText(`https://raw.githubusercontent.com/${project}/master/feedback.md`);
+}
 
 const mockPrData: PrData = {
     label: `#45 - This is my PR title`,
@@ -52,7 +37,6 @@ const mockPrData: PrData = {
     href: `https://github.com/Ada-C11/trek/pull/45`,
     authorUsername: `somegithubusername`,
     commentNumber: 1,
-    feedbackMarkdown: mockFeedbackMarkdown,
     grade: null,
 }
 
@@ -203,12 +187,15 @@ const SubmitButton = styled(`button`)({
 
 export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
     const prId = match.params.id;
+    // TODO: replace with REAL param of org and repo
+    const project = `ada-code-review/calculator`;
+    const {data: feedbackMarkdown} = useFetchFeedbackData(project);
     // TODO: use real data here
     const { prData, isLoading } = useMockPrData(prId);
-    const [feedbackFormText, setFeedbackFormText] = React.useState(prData && prData.feedbackMarkdown || ``);
+    const [feedbackFormText, setFeedbackFormText] = React.useState(feedbackMarkdown);
 
     React.useEffect(() => {
-        setFeedbackFormText(prData && prData.feedbackMarkdown || ``);
+        setFeedbackFormText(feedbackMarkdown);
     }, [prId, prData]);
 
     const handleFeedbackFormInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

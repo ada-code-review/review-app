@@ -86,8 +86,36 @@ function useFetchFromGithub<T>(url: string, options?: RequestInit) {
     return { data, error, isLoading };
 }
 
+function useFetchText(url: string, options?: RequestInit) {
+    const [data, setDataState] = useState< string | undefined >(undefined);
+    const [error, setErrorState] = useState< string | undefined > (undefined);
+    const [isLoading, setIsLoadingState] = useState(true);
+
+    useEffect(
+        () => {
+            setIsLoadingState(true);
+            fetch(url, options)
+            .then(response => response.text())
+            .then(data => {
+                setDataState(data);
+                setErrorState(undefined);
+            })
+            .catch(error => {
+                setDataState(undefined);
+                setErrorState(error);
+            })
+            .finally(() => {
+                setIsLoadingState(false);
+            })
+        },
+        [url, options]
+    );
+    return { data, error, isLoading };
+}
+
 export {
     fetchFromGithub,
     formatSearchQuery,
     useFetchFromGithub,
+    useFetchText,
 }
