@@ -60,7 +60,7 @@ function convertToPrData(prBackendData: PrBackendData): PrData {
     }
 
     return {
-        label: `${prBackendData.number}-${prBackendData.title}`,
+        label: `${prBackendData.number} - ${prBackendData.title}`,
         href: prBackendData.html_url,
         authorUsername: prBackendData.user.login,
         comments: prBackendData.review_comments,
@@ -203,8 +203,9 @@ const SubmitButton = styled(`button`)({
 export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
     const org = match.params.org;
     const repo = match.params.repo;
+    const project = `${org}/${repo}`
     const prId = match.params.id;
-    const {data: feedbackMarkdown} = useFetchFeedbackData(`${org}/${repo}`);
+    const {data: feedbackMarkdown} = useFetchFeedbackData(project);
     const { prBackendData, isLoading } = useFetchPrData(org, repo, prId);
     const prData = prBackendData ? convertToPrData(prBackendData) : null;
     const [feedbackFormText, setFeedbackFormText] = React.useState(feedbackMarkdown);
@@ -231,7 +232,7 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
         }
         return (
             <React.Fragment>
-                <Subtitle>{repo}</Subtitle>
+                <Subtitle>{project}</Subtitle>
                 <TitleLayout>
                     <Title>{prData && prData.label}</Title>
                     <PrLink href={prData.href} target='_blank'>{prData && prData.href}</PrLink>
