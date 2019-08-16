@@ -5,13 +5,15 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircle } from '@fortawesome/free-regular-svg-icons'
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 import { Main, Header1, BodyText, BodyTextLink, BodyOL } from './sharedStyleComponents';
-import { useFetchText } from './fetchFromGithub';
+import { useFetchFromGithub, useFetchText } from './fetchFromGithub';
 import { Grade } from './fetchFromFirebase';
 import { colors, fonts } from './designTokens';
 import { Spacer, InlineSpacer } from './Spacer';
 
 interface FeedbackPageParams {
     id: string,
+    org: string,
+    repo: string,
 }
 
 interface FeedbackPageProps extends RouteComponentProps<FeedbackPageParams> {
@@ -20,38 +22,51 @@ interface FeedbackPageProps extends RouteComponentProps<FeedbackPageParams> {
 
 interface PrData {
     label: string,
-    repo: string,
     href: string,
     authorUsername: string,
-    commentNumber: number,
+    comments: number,
+    submitFeedbackUrl: string,
     grade: Grade | null,
 }
+interface PrBackendData {
+    title: string,
+    number: number, // PR number for that repo
+    html_url: string,
+    user: {
+        login: string, // author's github username
+    },
+    review_comments: number,
+    review_comments_url: string //for submission to backend
+}
 
-function useFetchFeedbackData(project: string) {
+function useFetchFeedbackData(project: string,) {
     return useFetchText(`https://raw.githubusercontent.com/${project}/master/feedback.md`);
 }
 
-const mockPrData: PrData = {
-    label: `#45 - This is my PR title`,
-    repo: `Ada-11/Trek`,
-    href: `https://github.com/Ada-C11/trek/pull/45`,
-    authorUsername: `somegithubusername`,
-    commentNumber: 1,
-    grade: null,
+function useFetchPrData(org: string, repo: string, prId: string,) {
+    const path = `repos/${org}/${repo}/pulls/${prId}`
+    const {data, error, isLoading} = useFetchFromGithub<PrBackendData>(path);
+    return {
+        prBackendData: data,
+        isLoading: isLoading,
+        error
+    }
 }
 
-function useMockPrData(prId: string,) {
-    const [isLoading, setIsLoading] = React.useState<boolean>(true);
-    const [prData, setPrData] = React.useState<PrData | null>(null);
-    useEffect(() => {
-        setIsLoading(true);
-        setTimeout(() => {
-            setPrData(mockPrData);
-            setIsLoading(false);
-        }, 1000);
-    }, [prId]);
+function convertToPrData(prBackendData: PrBackendData): PrData {
+    prBackendData.title = prBackendData.title.trim()
+    if (prBackendData.title.length > 20) {
+        prBackendData.title = `${prBackendData.title.substring(0,20).trim()}...`
+    }
 
-    return { prData, isLoading };
+    return {
+        label: `${prBackendData.number}-${prBackendData.title}`,
+        href: prBackendData.html_url,
+        authorUsername: prBackendData.user.login,
+        comments: prBackendData.review_comments,
+        submitFeedbackUrl: prBackendData.review_comments_url,
+        grade: null, // TODO get grade?
+    };
 }
 
 const Subtitle = styled(`h2`)({
@@ -186,12 +201,12 @@ const SubmitButton = styled(`button`)({
 });
 
 export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
+    const org = match.params.org;
+    const repo = match.params.repo;
     const prId = match.params.id;
-    // TODO: replace with REAL param of org and repo
-    const project = `ada-code-review/calculator`;
-    const {data: feedbackMarkdown} = useFetchFeedbackData(project);
-    // TODO: use real data here
-    const { prData, isLoading } = useMockPrData(prId);
+    const {data: feedbackMarkdown} = useFetchFeedbackData(`${org}/${repo}`);
+    const { prBackendData, isLoading } = useFetchPrData(org, repo, prId);
+    const prData = prBackendData ? convertToPrData(prBackendData) : null;
     const [feedbackFormText, setFeedbackFormText] = React.useState(feedbackMarkdown);
 
     React.useEffect(() => {
@@ -205,7 +220,7 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
     // TODO: make these do something
     const refreshData = () => undefined;
     const handleGradeChange = (newGrade: Grade) => undefined;
-    const submitFormData = () => undefined;
+    const submitFormData = () => undefined; // use POST submitFeedbackUrl
 
     function getContents() {
         if (isLoading) {
@@ -216,10 +231,10 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
         }
         return (
             <React.Fragment>
-                <Subtitle>{prData.repo}</Subtitle>
+                <Subtitle>{repo}</Subtitle>
                 <TitleLayout>
-                    <Title>{prData.label}</Title>
-                    <PrLink>{prData.href}</PrLink>
+                    <Title>{prData && prData.label}</Title>
+                    <PrLink href={prData.href} target='_blank'>{prData && prData.href}</PrLink>
                 </TitleLayout>
                 <BodyText>
                     Providing complete feedback on a student’s work involves three distinct steps:
@@ -237,15 +252,15 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
                 <FormBottomBar>
                     <FormBottomBarLeft>
                         <CommentIndicator
-                            hasComment={prData.commentNumber > 0}
+                            hasComment={prData && prData.comments > 0}
                             refreshData={refreshData}
                         />
                     </FormBottomBarLeft>
                     <FormBottomBarRight>
-                        <GradeSelector grade={prData.grade} onChange={handleGradeChange}/>
+                        <GradeSelector grade={prData && prData.grade} onChange={handleGradeChange}/>
                         <Spacer width={20}/>
                         <SubmitButton
-                            disabled={!prData.commentNumber}
+                            disabled={prData && prData.comments == 0}
                             onClick={submitFormData}
                         >
                             Submit Feedback

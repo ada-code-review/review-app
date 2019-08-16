@@ -51,17 +51,18 @@ function convertToPrListItem(prListItems: PrItemBackend[], grades: AllGradeData,
                 commentUrl: null,
             });
         }
+        const repo = repoUrl.pathname.replace(`/repos/`, ``);
         return {
             label: `${backendItem.number}-${backendItem.title}`,
             href: backendItem.html_url,
-            repo: repoUrl.pathname.replace(`/repos/`, ``),
+            repo: repo,
             studentUsername: backendItem.user.login,
             assigneeUsername: backendItem.assignee && backendItem.assignee.login,
             submittedDate: new Date(backendItem.created_at),
             grade: gradeData ? gradeData.grade : null,
             updateGrade,
             feedbackCommentHref: gradeData ? gradeData.commentUrl : null,
-            submitFeedbackUrl: `/feedback/${backendItem.id}`,
+            submitFeedbackUrl: `/feedback/${repo}/${backendItem.number}`,
         };
     });
 }
