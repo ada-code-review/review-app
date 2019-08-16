@@ -11,7 +11,7 @@ import { ListPage } from './ListPage';
 import { UnauthorizedPage } from './UnauthorizedPage';
 import { fonts } from './designTokens';
 
-import { Credentials } from './stores/UserStore';
+import { useUserStore, UserState, getIsSignedIn, Credentials } from './stores/UserStore';
 import { Main, BodyText } from './sharedStyleComponents';
 import { useManageUser } from './stores/useManageUser';
 
@@ -37,22 +37,17 @@ const App: React.FC<AppProps> = ({
   signOut: firebaseSignOut,
   signInWithGithub: firebaseGithubSignIn,
 }) => {
-  const {
-    isSignedIn,
-    isLoading,
-    role,
-    signOut: signOutUser,
-    signIn,
-  } = useManageUser({ user, firebaseSignOut, firebaseGithubSignIn });
+  const { signOut, signIn } = useManageUser({ user, firebaseSignOut, firebaseGithubSignIn });
+  const userStore: UserState = useUserStore();
 
   function getContents() {
-    if (isLoading) {
+    if (userStore.isLoading) {
       return <Main><BodyText>Loading...</BodyText></Main>
     }
-    if (!isSignedIn) {
+    if (!getIsSignedIn(userStore)) {
       return <SignInPage signIn={signIn}/>
     }
-    if (role === `unauthorized`) {
+    if (userStore.role === `unauthorized`) {
       return <UnauthorizedPage />;
     }
     return (
@@ -67,7 +62,7 @@ const App: React.FC<AppProps> = ({
   return (
     <Router>
       <Root>
-        <Nav signOut={signOutUser}/>
+        <Nav signOut={signOut}/>
         {getContents()}
       </Root>
     </Router>

@@ -70,20 +70,20 @@ export function useManageUser({ user, firebaseSignOut, firebaseGithubSignIn }: {
 
   function signInWithUserData(user: firebase.User, accessToken: String) {
     userStore.startLoad();
-        fetchFromGithub<UserData>(`user`, undefined, accessToken)
-          .then((userData) => {
+    fetchFromGithub<UserData>(`user`, undefined, accessToken)
+        .then((userData) => {
             const username = userData.login;
             getUserRole(username, accessToken)
-              .then((role) => {
-                localStorage.setItem(`accessToken`, accessToken.toString());
-                userStore.signIn({
-                  username,
-                  user,
-                  accessToken: accessToken,
-                  role,
+                .then((role) => {
+                    localStorage.setItem(`accessToken`, accessToken.toString());
+                    userStore.signIn({
+                        username,
+                        user,
+                        accessToken: accessToken,
+                        role,
+                    });
                 });
-              });
-          });
+        });
   }
 
   function signOutUser() {
@@ -97,9 +97,6 @@ export function useManageUser({ user, firebaseSignOut, firebaseGithubSignIn }: {
       .then(({user, credential}) => signInWithUserData(user, credential.accessToken));
   }
   return {
-    isSignedIn: getIsSignedIn(userStore),
-    isLoading: userStore.isLoading,
-    role: userStore.role,
     signOut: signOutUser,
     signIn: signInViaGithub,
   }
