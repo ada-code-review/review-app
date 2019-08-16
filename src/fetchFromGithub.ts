@@ -17,10 +17,11 @@ function fetchFromGithub<T>(url: string, options?: RequestInit, accessToken?: St
         ...options.headers,
         authorization: `Bearer ${accessToken || userStoreApi.getState().accessToken}`
     };
+    url = url.indexOf('https') === 0 ? url : GITHUB_BASE_URL + url;
 
     // TODO: if the endpoint returns a non-200, this will return the error response
     // instead of throwing
-    return fetch(GITHUB_BASE_URL + url, options)
+    return fetch(url, options)
         .then((response) => {
             return response.json()
                 .then((responseBody) => {
@@ -86,8 +87,36 @@ function useFetchFromGithub<T>(url: string, options?: RequestInit) {
     return { data, error, isLoading };
 }
 
+function useFetchText(url: string, options?: RequestInit) {
+    const [data, setDataState] = useState< string | undefined >(undefined);
+    const [error, setErrorState] = useState< string | undefined > (undefined);
+    const [isLoading, setIsLoadingState] = useState(true);
+
+    useEffect(
+        () => {
+            setIsLoadingState(true);
+            fetch(url, options)
+            .then(response => response.text())
+            .then(data => {
+                setDataState(data);
+                setErrorState(undefined);
+            })
+            .catch(error => {
+                setDataState(undefined);
+                setErrorState(error);
+            })
+            .finally(() => {
+                setIsLoadingState(false);
+            })
+        },
+        [url, options]
+    );
+    return { data, error, isLoading };
+}
+
 export {
     fetchFromGithub,
     formatSearchQuery,
     useFetchFromGithub,
+    useFetchText,
 }
