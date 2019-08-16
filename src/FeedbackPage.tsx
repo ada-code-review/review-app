@@ -35,6 +35,7 @@ interface PrData {
     submitFeedbackPath: string,
     grade: Grade | null,
     setGradeData: (newGradeData: GradeData) => void,
+    feedbackMarkdown: string,
 }
 interface PrBackendData {
     id: number,
@@ -54,11 +55,12 @@ function useFetchFeedbackData(project: string,) {
 
 function useFetchPrData(org: string, repo: string, prId: string) {
     const path = `repos/${org}/${repo}/pulls/${prId}`
-    const {data, error, isLoading} = useFetchFromGithub<PrBackendData>(path);
+    const {data, error, isLoading: isLoadingGithub} = useFetchFromGithub<PrBackendData>(path);
+    const { data: feedbackMarkdown, isLoading: isLoadingMarkdown} = useFetchFeedbackData(`${org}/${repo}`)
     const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase();
     return {
-        prData: data && grades ? convertToPrData(data, grades, setGradeData) : null,
-        isLoading: isLoading || isLoadingFirebase,
+        prData: data && grades && typeof feedbackMarkdown === `string` ? convertToPrData(data, grades, setGradeData, feedbackMarkdown) : null,
+        isLoading: isLoadingGithub || isLoadingFirebase || isLoadingMarkdown,
         error
     }
 }
@@ -67,6 +69,7 @@ function convertToPrData(
     prBackendData: PrBackendData,
     allGradeData: AllGradeData,
     setGradeData: (prId: number, newData: GradeData) => void,
+    feedbackMarkdown: string,
 ): PrData {
     prBackendData.title = prBackendData.title.trim()
     if (prBackendData.title.length > 20) {
@@ -83,6 +86,7 @@ function convertToPrData(
         submitFeedbackPath: new URL(prBackendData.comments_url).pathname.slice(1),
         grade: gradeData ? gradeData.grade : null,
         setGradeData: (gradeData: GradeData) => setGradeData(prBackendData.id, gradeData),
+        feedbackMarkdown,
     };
 }
 
@@ -224,20 +228,18 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
     const repo = match.params.repo;
     const project = `${org}/${repo}`
     const prId = match.params.id;
-    const { data: feedbackMarkdown } = useFetchFeedbackData(project);
     const { prData, isLoading } = useFetchPrData(org, repo, prId);
-    const prDataId = prData ? prData.id : null;
-    const [feedbackFormText, setFeedbackFormText] = React.useState(feedbackMarkdown);
+    const [feedbackFormText, setFeedbackFormText] = React.useState(prData ? prData.feedbackMarkdown : ``);
     const [grade, setGrade] = React.useState(prData ? prData.grade : null);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     React.useEffect(() => {
-        setFeedbackFormText(feedbackMarkdown);
-    }, [prId, prDataId, feedbackMarkdown]);
+        setFeedbackFormText(prData ? prData.feedbackMarkdown : ``);
+    }, [prId, prData ? prData.feedbackMarkdown : ``]);
 
     React.useEffect(() => {
         setGrade(prData ? prData.grade : null);
-    }, [prId, prDataId]);
+    }, [prId, prData ? prData.grade : null]);
 
     const handleFeedbackFormInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setFeedbackFormText(e.target.value);
