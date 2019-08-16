@@ -74,16 +74,29 @@ interface PrListItem {
     updateGrade: (newGrade: Grade) => void,
 }
 
-const InstructorListPage = () => {
-    const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS });
-    const {data, error, isLoading} = useFetchFromGithub<ListFetchData>(`search/issues?q=${query}`);
+function useFetchListData() {
+    const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS, });
+    const {data, error, isLoading} = useFetchFromGithub<ListFetchData>(`search/issues?q=${query}&per_page=100&sort=updated&order=desc`);
 
-    const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase();
+    const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase(`/grades/`);
+
+    return {
+        prListData: data && data.items || null,
+        grades,
+        isLoading: isLoading || isLoadingFirebase,
+        error,
+        setGradeData,
+    }
+}
+
+const InstructorListPage = () => {
+    const { prListData, grades, isLoading, error, setGradeData } = useFetchListData();
+
     return (
         <Main>
             <Header1>Student Pull Requests</Header1>
-            {!isLoading && data && data.items ?
-                <PrListTable prListData={convertToPrListItem(data.items, grades, setGradeData)} />:
+            {!isLoading && prListData ?
+                <PrListTable prListData={convertToPrListItem(prListData, grades, setGradeData)} />:
                 <BodyText>Loading...</BodyText>
             }
         </Main>
@@ -91,11 +104,7 @@ const InstructorListPage = () => {
 };
 
 const VolunteerListPage = () => {
-    // const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS, per_page: `100`, sort: `updated`, order: `desc`});
-    const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS });
-    const {data, error, isLoading} = useFetchFromGithub<ListFetchData>(`search/issues?q=${query}`);
-
-    const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase();
+    const { prListData, grades, isLoading, error, setGradeData } = useFetchListData();
 
     return (
         <Main>
@@ -106,8 +115,8 @@ const VolunteerListPage = () => {
                 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
                 laboris nisi ut aliquip ex ea commodo consequat. <BodyTextLink>Read more</BodyTextLink>
             </BodyText>
-            {!isLoading && !isLoadingFirebase && data && data.items ?
-                <PrListTable prListData={convertToPrListItem(data.items, grades, setGradeData)} />:
+            {!isLoading && prListData ?
+                <PrListTable prListData={convertToPrListItem(prListData, grades, setGradeData)} />:
                 <BodyText>Loading...</BodyText>
             }
         </Main>
