@@ -236,7 +236,7 @@ interface PrListRowProps {
 }
 
 const PrListRow: React.FC<PrListRowProps> = ({ prListItem, showAssignee }) => {
-    const setGradeToGreen = () => prListItem.updateGrade('green');
+    const setGrade = (grade: Grade) => prListItem.updateGrade(grade);
     return (
         <TableListRow>
             <ListTableCell><TableLink href={prListItem.href} target='_blank'>{prListItem.label}</TableLink></ListTableCell>
@@ -252,7 +252,7 @@ const PrListRow: React.FC<PrListRowProps> = ({ prListItem, showAssignee }) => {
             </ListTableCell>
             <ListTableCell className={css({textAlign: `right`})}>
               {prListItem.grade &&
-                <GradeMenu grade={prListItem.grade} placement='bottom-end' onSelect={(grade) => console.log(grade)} />
+                <GradeMenu grade={prListItem.grade} placement='bottom-end' onSelect={setGrade} />
               }
             </ListTableCell>
         </TableListRow>
