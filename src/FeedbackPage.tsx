@@ -46,7 +46,12 @@ interface PrBackendData {
         login: string, // author's github username
     },
     review_comments: number,
-    comments_url: string //for submission to backend
+    comments_url: string, //for submission to backend
+    issue_url: string,
+}
+
+interface PrIssueBackendData {
+    id: number,
 }
 
 function useFetchFeedbackData(project: string,) {
@@ -55,18 +60,21 @@ function useFetchFeedbackData(project: string,) {
 
 function useFetchPrData(org: string, repo: string, prId: string) {
     const path = `repos/${org}/${repo}/pulls/${prId}`
-    const {data, error, isLoading: isLoadingGithub} = useFetchFromGithub<PrBackendData>(path);
+    const {data: prData, error: prError, isLoading: isLoadingGithub} = useFetchFromGithub<PrBackendData>(path);
+    const issuePath = prData ? new URL(prData.issue_url).pathname.slice(1) : null;
+    const { data: issueData, error: issueError, isLoading: isLoadingIssue } = useFetchFromGithub<PrIssueBackendData>(issuePath);
     const { data: feedbackMarkdown, isLoading: isLoadingMarkdown} = useFetchFeedbackData(`${org}/${repo}`)
     const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase();
     return {
-        prData: data && grades && typeof feedbackMarkdown === `string` ? convertToPrData(data, grades, setGradeData, feedbackMarkdown) : null,
-        isLoading: isLoadingGithub || isLoadingFirebase || isLoadingMarkdown,
-        error
+        prData: prData && issueData && grades && typeof feedbackMarkdown === `string` ? convertToPrData(prData, issueData, grades, setGradeData, feedbackMarkdown) : null,
+        isLoading: isLoadingGithub || isLoadingIssue || isLoadingFirebase || isLoadingMarkdown,
+        prError,
     }
 }
 
 function convertToPrData(
     prBackendData: PrBackendData,
+    issueData: PrIssueBackendData,
     allGradeData: AllGradeData,
     setGradeData: (prId: number, newData: GradeData) => void,
     feedbackMarkdown: string,
@@ -75,17 +83,17 @@ function convertToPrData(
     if (prBackendData.title.length > 20) {
         prBackendData.title = `${prBackendData.title.substring(0,20).trim()}...`
     }
-    const gradeData = allGradeData[prBackendData.id];
+    const gradeData = allGradeData[issueData.id];
 
     return {
-        id: prBackendData.id,
+        id: issueData.id,
         label: `${prBackendData.number} - ${prBackendData.title}`,
         href: prBackendData.html_url,
         authorUsername: prBackendData.user.login,
         comments: prBackendData.review_comments,
         submitFeedbackPath: new URL(prBackendData.comments_url).pathname.slice(1),
         grade: gradeData ? gradeData.grade : null,
-        setGradeData: (gradeData: GradeData) => setGradeData(prBackendData.id, gradeData),
+        setGradeData: (gradeData: GradeData) => setGradeData(issueData.id, gradeData),
         feedbackMarkdown,
     };
 }
@@ -211,6 +219,7 @@ const SubmitButton = styled(`button`)({
     paddingLeft: 20,
     paddingRight: 20,
     cursor: `pointer`,
+    whiteSpace: `nowrap`,
     ':hover': {
         backgroundColor: colors.tealDark,
         borderColor: colors.tealDark,
@@ -273,7 +282,7 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
             return <BodyText>Loading...</BodyText>;
         }
         if (!prData) {
-            return <BodyText>Nothing to show here</BodyText>;
+            return <BodyText>Uh oh! It looks like this PR doesn't exist.</BodyText>;
         }
         const prInfo = prData!;
         return (

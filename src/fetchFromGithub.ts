@@ -61,12 +61,15 @@ function formatSearchQuery(params: {[key:string]: string|string[] }) {
     }).join('+');
 }
 
-function useFetchFromGithub<T>(url: string, options?: RequestInit) {
+function useFetchFromGithub<T>(url: string | null, options?: RequestInit) {
     const [data, setDataState] = useState<T>();
     const [error, setErrorState] = useState<Error | RequestError>();
     const [isLoading, setIsLoadingState] = useState(true);
     useEffect(
         () => {
+            if (!url) {
+                return;
+            }
             setIsLoadingState(true);
             fetchFromGithub<T>(url, options)
             .then(data => {

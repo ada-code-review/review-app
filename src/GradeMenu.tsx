@@ -50,8 +50,10 @@ const GradeButton = styled(MenuDisclosure)<NullableGradeProp>(props => ({
     borderWidth: 1,
     padding: 0,
     cursor: `pointer`,
+    outline: `none`,
     overflow: `hidden`,
     display: `flex`,
+    whiteSpace: `nowrap`,
     '& > *': {
         paddingTop: 9,
         paddingBottom: 10,
