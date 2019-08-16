@@ -3,7 +3,7 @@ import styled from '@emotion/styled';
 
 import { Link } from 'react-router-dom';
 import { useUserStore, UserState } from './stores/UserStore';
-import { Header1, BodyText, BodyTextLink } from './sharedStyleComponents';
+import { Header1, BodyText, BodyTextLink, Main } from './sharedStyleComponents';
 import { formatSearchQuery, useFetchFromGithub } from './fetchFromGithub';
 import { useFetchFromFirebase, GradeData, Grade, AllGradeData } from './fetchFromFirebase';
 import { GITHUB_ORGS } from './constants';
@@ -80,13 +80,13 @@ const InstructorListPage = () => {
 
     const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase();
     return (
-        <div>
+        <Main>
             <Header1>Student Pull Requests</Header1>
             {!isLoading && data && data.items ?
                 <PrListTable prListData={convertToPrListItem(data.items, grades, setGradeData)} />:
                 <BodyText>Loading...</BodyText>
             }
-        </div>
+        </Main>
     );
 };
 
@@ -98,7 +98,7 @@ const VolunteerListPage = () => {
     const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase();
 
     return (
-        <div>
+        <Main>
             <Header1>Assigned Pull Requests</Header1>
             <BodyText>
                 This view should include some high level information about providing good feedback to the students.
@@ -110,7 +110,7 @@ const VolunteerListPage = () => {
                 <PrListTable prListData={convertToPrListItem(data.items, grades, setGradeData)} />:
                 <BodyText>Loading...</BodyText>
             }
-        </div>
+        </Main>
     );
 };
 
