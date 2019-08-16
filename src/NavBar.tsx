@@ -4,6 +4,7 @@ import styled from '@emotion/styled';
 import BrandLogo from './ada-logo-white.svg';
 import { useUserStore } from './stores/UserStore';
 import { colors } from './designTokens';
+import { Spacer } from './Spacer';
 
 const NavContainer = styled(`nav`)({
   backgroundColor: colors.teal100,
@@ -16,10 +17,28 @@ const NavContainer = styled(`nav`)({
   paddingRight: 50,
 });
 
-// TODO: style the sign out button
+const SignOutButton = styled(`button`)({
+  cursor: `pointer`,
+  border: `none`,
+  backgroundColor: `transparent`,
+  color: colors.white,
+  fontSize: 16,
+  padding: 0,
+});
+
+const StyledSpacer = styled(Spacer)({
+  display: `inline-block`,
+});
+
 const UserTile = ({ userName, signOut }: { userName: string | null, signOut: () => void }) => {
   const firstName = userName ? userName.split(` `)[0] : ``;
-  return <div>Hi {firstName} <button onClick={signOut}>Sign out</button></div>
+  return (
+    <div>
+      Hi {firstName}
+      <StyledSpacer width='.5em'/>|<StyledSpacer width='.5em'/>
+      <SignOutButton onClick={signOut}>Log out</SignOutButton>
+    </div>
+  );
 }
 
 export const Nav = ({ signOut }: { signOut: () => void }) => {

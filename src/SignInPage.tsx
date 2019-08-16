@@ -3,6 +3,7 @@ import styled from '@emotion/styled';
 import { colors, fonts } from './designTokens';
 import { Header1, Header3, BodyText, Main, BodyTextLink } from './sharedStyleComponents';
 import GithubLogo from './github-logo.svg';
+import { Spacer } from './Spacer';
 
 const Root = styled(`div`)({
     textAlign: `center`,
@@ -60,11 +61,6 @@ const Footer = styled(`footer`)({
 const FooterHeader = styled(Header3)({
     color: colors.teal100,
 });
-
-const Spacer = styled(`div`)<{ height?: number, width?: number }>(({ height, width }) => ({
-    height: height || 0,
-    width: width || 0,
-}));
 
 // TODO: make these links go somewhere
 export const SignInPage = ({ signIn }: {signIn: () => void }) => (
