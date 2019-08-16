@@ -23,10 +23,8 @@ function formatSearchQuery(params: {[key:string]: string|string[] }) {
     }).join('+');
 }
 
-type ApiData = { [key: string]: any };
-
-function useFetchFromGithub(url: string, options?: RequestInit) {
-    const [data, setDataState] = useState< ApiData | undefined >(undefined);
+function useFetchFromGithub<T>(url: string, options?: RequestInit) {
+    const [data, setDataState] = useState< T | undefined >(undefined);
     const [error, setErrorState] = useState< string | undefined > (undefined);
     const [isLoading, setIsLoadingState] = useState(true);
     useEffect(
