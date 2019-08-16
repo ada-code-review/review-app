@@ -2,14 +2,16 @@ import { userStoreApi } from './stores/UserStore';
 import { useState, useEffect } from "react";
 import { GITHUB_BASE_URL } from './constants';
 
-function fetchFromGithub(url: string, options?: RequestInit) {
+function fetchFromGithub<T>(url: string, options?: RequestInit, accessToken?: String) {
     options = options || {};
     options.headers = {
         ...options.headers,
-        authorization: `Bearer ${userStoreApi.getState().accessToken}`
+        authorization: `Bearer ${accessToken || userStoreApi.getState().accessToken}`
     };
 
-    return fetch(GITHUB_BASE_URL + url, options).then((response => response.json()));
+    // TODO: if the endpoint returns a non-200, this will return the error response
+    // instead of throwing
+    return fetch(GITHUB_BASE_URL + url, options).then((response => response.json() as Promise<T>));
 };
 
 function formatSearchQuery(params: {[key:string]: string|string[] }) {
@@ -30,7 +32,7 @@ function useFetchFromGithub<T>(url: string, options?: RequestInit) {
     useEffect(
         () => {
             setIsLoadingState(true);
-            fetchFromGithub(url, options)
+            fetchFromGithub<T>(url, options)
             .then(data => {
                 setDataState(data);
                 setErrorState(undefined);

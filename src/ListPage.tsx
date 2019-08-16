@@ -32,8 +32,7 @@ interface PrItemBackend {
 }
 
 function filterByAssignee(username: string, prListItems: PrItemBackend[]): PrItemBackend[] {
-    // return prListItems.filter((item) => !!item.assignee && item.assignee.login === username);
-    return prListItems;
+    return prListItems.filter((item) => !!item.assignee && item.assignee.login === username);
 }
 
 function convertToPrListItem(prListItems: PrItemBackend[], grades: AllGradeData, setGrade: (prId: number, grade: GradeData) => void): PrListItem[] {
@@ -92,19 +91,38 @@ function useFetchListData() {
 const InstructorListPage = () => {
     const { prListData, grades, isLoading, error, setGradeData } = useFetchListData();
 
+    function getContents() {
+        if (isLoading) {
+            return <BodyText>Loading...</BodyText>;
+        }
+        if (prListData && prListData.length) {
+            return <PrListTable prListData={convertToPrListItem(prListData, grades, setGradeData)} />;
+        }
+        return <BodyText>Nothing to show here</BodyText>;
+    }
+
     return (
         <Main>
             <Header1>Student Pull Requests</Header1>
-            {!isLoading && prListData ?
-                <PrListTable prListData={convertToPrListItem(prListData, grades, setGradeData)} />:
-                <BodyText>Loading...</BodyText>
-            }
+            {getContents()}
         </Main>
     );
 };
 
 const VolunteerListPage = () => {
+    const username = useUserStore(state => state.username);
     const { prListData, grades, isLoading, error, setGradeData } = useFetchListData();
+
+    function getContents() {
+        if (isLoading) {
+            return <BodyText>Loading...</BodyText>;
+        }
+        const filteredListData = filterByAssignee(username!, prListData || []);
+        if (filteredListData.length) {
+            return <PrListTable prListData={convertToPrListItem(filteredListData, grades, setGradeData)} />;
+        }
+        return <BodyText>You don't have any PRs assigned to you yet!</BodyText>;
+    }
 
     return (
         <Main>
@@ -115,10 +133,7 @@ const VolunteerListPage = () => {
                 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
                 laboris nisi ut aliquip ex ea commodo consequat. <BodyTextLink>Read more</BodyTextLink>
             </BodyText>
-            {!isLoading && prListData ?
-                <PrListTable prListData={convertToPrListItem(prListData, grades, setGradeData)} />:
-                <BodyText>Loading...</BodyText>
-            }
+            {getContents()}
         </Main>
     );
 };
