@@ -47,6 +47,17 @@ export function useManageUser({ user, firebaseSignOut, firebaseGithubSignIn }: {
 }) {
   const userStore: UserState = useUserStore();
 
+  // When the page loads, `user` will initially be undefined while
+  // firebase loads, and then will be either `null` (if the user is
+  // signed out) or a User object (if the user is signed in). However,
+  // firebase doesn't automatically persist the github access token, so we
+  // do so manually here in local storage. This useEffect is our awkward
+  // way to trigger the sign-in path on page load if the user has already
+  // been signed in.
+
+  // It also sets `isLoading` to false if firebase loads and we don't have
+  // enough data to sign in the user (either they're signed out of firebase
+  // or we don't have their access token in local storage)
   React.useEffect(() => {
     const accessToken = localStorage.getItem(`accessToken`);
     if (!getIsSignedIn(userStore) && user && accessToken) {
