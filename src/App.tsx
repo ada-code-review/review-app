@@ -11,9 +11,9 @@ import { ListPage } from './ListPage';
 import { UnauthorizedPage } from './UnauthorizedPage';
 import { fonts } from './designTokens';
 
-import { useUserStore, UserState, Credentials, UserRole, isSignedIn } from './stores/UserStore';
-import { fetchFromGithub, RequestError } from './fetchFromGithub';
-import { VOLUNTEER_TEAM_ID, INSTRUCTOR_TEAM_ID } from './constants';
+import { useUserStore, UserState, getIsSignedIn, Credentials } from './stores/UserStore';
+import { Main, BodyText } from './sharedStyleComponents';
+import { useManageUser } from './stores/useManageUser';
 
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 
@@ -32,70 +32,19 @@ const RedirectToHomePage = () => (
   <Redirect to='/'/>
 );
 
-interface UserData {
-  login: string,
-}
-
-interface MembershipInfo {
-  url: string,
-  role: 'maintainer' | 'member',
-  state: 'active' | 'pending',
-}
-
-function catch404(e: Error | RequestError) {
-  if (e && (e as RequestError).statusCode === 404) {
-    return null;
-  }
-  throw e;
-}
-
-function getUserRole(username: string, accessToken?: String) {
-  return Promise.all([
-    fetchFromGithub<MembershipInfo>(`teams/${VOLUNTEER_TEAM_ID}/memberships/${username}`, undefined, accessToken)
-      .catch(catch404),
-    fetchFromGithub<MembershipInfo>(`teams/${INSTRUCTOR_TEAM_ID}/memberships/${username}`, undefined, accessToken)
-    .catch(catch404),
-  ]).then(([volunteerMembershipInfo, instructorMembershipInfo]) => {
-    let role: UserRole = `unauthorized`;
-    if (volunteerMembershipInfo) {
-      role = `volunteers`;
-    }
-    if (instructorMembershipInfo) {
-      role = `instructors`;
-    }
-    return role;
-  });
-}
-
-const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
+const App: React.FC<AppProps> = ({
+  user,
+  signOut: firebaseSignOut,
+  signInWithGithub: firebaseGithubSignIn,
+}) => {
+  const { signOut, signIn } = useManageUser({ user, firebaseSignOut, firebaseGithubSignIn });
   const userStore: UserState = useUserStore();
 
-  function signIn() {
-    return signInWithGithub()
-      .then(({user, credential}) => {
-        fetchFromGithub<UserData>(`user`, undefined, credential.accessToken)
-          .then((userData) => {
-            const username = userData.login;
-            getUserRole(username, credential.accessToken)
-              .then((role) => {
-                userStore.signIn({
-                  username,
-                  user,
-                  credentials: credential,
-                  role,
-                });
-              });
-          });
-      });
-  }
-
-  function signOutUser() {
-    userStore.signOut();
-    signOut();
-  }
-
   function getContents() {
-    if (!isSignedIn(userStore)) {
+    if (userStore.isLoading) {
+      return <Main><BodyText>Loading...</BodyText></Main>
+    }
+    if (!getIsSignedIn(userStore)) {
       return <SignInPage signIn={signIn}/>
     }
     if (userStore.role === `unauthorized`) {
@@ -113,7 +62,7 @@ const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
   return (
     <Router>
       <Root>
-        <Nav signOut={signOutUser}/>
+        <Nav signOut={signOut}/>
         {getContents()}
       </Root>
     </Router>
