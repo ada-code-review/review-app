@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from '@emotion/styled';
+import { css } from 'emotion';
 
 import { Link } from 'react-router-dom';
 import { useUserStore, UserState } from './stores/UserStore';
@@ -8,6 +9,7 @@ import { formatSearchQuery, useFetchFromGithub } from './fetchFromGithub';
 import { useFetchFromFirebase, GradeData, Grade, AllGradeData } from './fetchFromFirebase';
 import { GITHUB_ORGS } from './constants';
 import { fonts, colors } from './designTokens';
+import { GradeMenu } from './GradeMenu';
 
 interface ListFetchData {
     total_count: number,
@@ -220,7 +222,6 @@ const PrListTable: React.FC<PrListTableProps> = ({ prListData, showAssignee }) =
                 <ListTableHeader>Assignee</ListTableHeader>
                 <ListTableHeader>Feedback Status</ListTableHeader>
                 <ListTableHeader>Grade</ListTableHeader>
-                <ListTableHeader>Set grade</ListTableHeader>
             </tr>
         </ListTableHead>
         <ListTableBody>
@@ -249,8 +250,11 @@ const PrListRow: React.FC<PrListRowProps> = ({ prListItem, showAssignee }) => {
                     <TableInternalLink to={prListItem.submitFeedbackUrl}>Submit feedback</TableInternalLink>
                 }
             </ListTableCell>
-            <ListTableCell>{prListItem.grade}</ListTableCell>
-            <ListTableCell><button onClick={setGradeToGreen}>Make grade green</button></ListTableCell>
+            <ListTableCell className={css({textAlign: `right`})}>
+              {prListItem.grade &&
+                <GradeMenu grade={prListItem.grade} placement='bottom-end' onSelect={(grade) => console.log(grade)} />
+              }
+            </ListTableCell>
         </TableListRow>
     );
 };

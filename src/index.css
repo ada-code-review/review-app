@@ -7,3 +7,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+*:focus {
+  outline: 2px solid rgba(90, 132, 141, 0.25);
+}

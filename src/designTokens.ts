@@ -9,6 +9,12 @@ export const colors = {
     nearBlack: `#2A2A2A`,
     white: `#FFFFFF`,
     gray10: `#F9F9F9`,
+    shadow: `rgba(0, 0, 0, 0.175)`,
+    grades: {
+        red: `#C02525`,
+        yellow: `#D7C100`,
+        green: `#34B969`,
+    }
 };
 
 export const fonts = {
