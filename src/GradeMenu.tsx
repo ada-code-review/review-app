@@ -36,6 +36,8 @@ const GradeMenuDisclosure = styled(MenuDisclosure)<NullableGradeProp>`
     width: 20px;
     height: 20px;
     vertical-align: middle;
+    cursor: pointer;
+    outline: none;
 `;
 
 const GradeButton = styled(MenuDisclosure)<NullableGradeProp>(props => ({
@@ -98,6 +100,8 @@ const GradeMenuItem = styled(MenuItem)<GradeProp>`
     font-size: 1em;
     text-align: left;
     white-space: nowrap;
+    cursor: pointer;
+    outline: none;
     &:focus {
         color: ${colors.white};
         background: ${(props: GradeProp) => colors.grades[props.grade]};
