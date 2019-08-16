@@ -16,6 +16,7 @@ const NavContainer = styled(`nav`)({
   paddingRight: 50,
 });
 
+// TODO: style the sign out button
 const UserTile = ({ userName, signOut }: { userName: string | null, signOut: () => void }) => {
   const firstName = userName ? userName.split(` `)[0] : ``;
   return <div>Hi {firstName} <button onClick={signOut}>Sign out</button></div>

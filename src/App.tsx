@@ -44,6 +44,7 @@ interface TeamInfo {
 }
 
 function getRole(teams: TeamInfo[]): UserRole {
+  // TODO: figure out why user/teams isn't returning all the teams the user is a part of
   return `instructors`;
   // const identifierTeam = teams.find((team) => team.organization.login === GITHUB_ROLE_ORGANIZATION);
   // if (!identifierTeam) {
