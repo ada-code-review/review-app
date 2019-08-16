@@ -49,6 +49,24 @@ function catch404(e: Error | RequestError) {
   throw e;
 }
 
+function getUserRole(username: string, accessToken?: String) {
+  return Promise.all([
+    fetchFromGithub<MembershipInfo>(`teams/${VOLUNTEER_TEAM_ID}/memberships/${username}`, undefined, accessToken)
+      .catch(catch404),
+    fetchFromGithub<MembershipInfo>(`teams/${INSTRUCTOR_TEAM_ID}/memberships/${username}`, undefined, accessToken)
+    .catch(catch404),
+  ]).then(([volunteerMembershipInfo, instructorMembershipInfo]) => {
+    let role: UserRole = `unauthorized`;
+    if (volunteerMembershipInfo) {
+      role = `volunteers`;
+    }
+    if (instructorMembershipInfo) {
+      role = `instructors`;
+    }
+    return role;
+  });
+}
+
 const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
   const userStore: UserState = useUserStore();
 
@@ -58,26 +76,15 @@ const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
         fetchFromGithub<UserData>(`user`, undefined, credential.accessToken)
           .then((userData) => {
             const username = userData.login;
-            Promise.all([
-              fetchFromGithub<MembershipInfo>(`teams/${VOLUNTEER_TEAM_ID}/memberships/${username}`, undefined, credential.accessToken)
-                .catch(catch404),
-              fetchFromGithub<MembershipInfo>(`teams/${INSTRUCTOR_TEAM_ID}/memberships/${username}`, undefined, credential.accessToken)
-              .catch(catch404),
-            ]).then(([volunteerMembershipInfo, instructorMembershipInfo]) => {
-              let role: UserRole = `unauthorized`;
-              if (volunteerMembershipInfo) {
-                role = `volunteers`;
-              }
-              if (instructorMembershipInfo) {
-                role = `instructors`;
-              }
-              userStore.signIn({
-                username,
-                user,
-                credentials: credential,
-                role,
+            getUserRole(username, credential.accessToken)
+              .then((role) => {
+                userStore.signIn({
+                  username,
+                  user,
+                  credentials: credential,
+                  role,
+                });
               });
-            });
           });
       });
   }
