@@ -14,6 +14,7 @@ export const colors = {
         red: `#C02525`,
         yellow: `#D7C100`,
         green: `#34B969`,
+        pending: `#5A848D`,
     }
 };
 
