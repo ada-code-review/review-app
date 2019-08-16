@@ -21,7 +21,7 @@ interface PrItemBackend {
     title: string, // user defined title of PR
     html_url: string, // URL to actual pull request
     repository_url: string, // https://api.github.com/repos/<org>/<project>
-    created_at: string, // 2018 xx xx Z 
+    created_at: string, // 2018 xx xx Z
     user: {
         login: string, // author's github username
     },
@@ -39,6 +39,10 @@ function convertToPrListItem(prListItems: PrItemBackend[], grades: AllGradeData,
     return prListItems.map((backendItem) => {
         const repoUrl = new URL(backendItem.repository_url);
         const gradeData = grades[backendItem.id] || null;
+        backendItem.title = backendItem.title.trim()
+        if (backendItem.title.length > 20) {
+            backendItem.title = `${backendItem.title.substring(0,20).trim()}...`
+        }
         const updateGrade = (newGrade: Grade) => {
             setGrade(backendItem.id, {
                 grade: newGrade,
