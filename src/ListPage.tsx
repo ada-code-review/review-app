@@ -60,6 +60,25 @@ function convertToPrListItem(prListItems: PrItemBackend[], grades: AllGradeData,
     });
 }
 
+function sortByReviewed(prListItems: PrListItem[]): PrListItem[] {
+    const sortedList = [ ...prListItems ];
+    sortedList.sort((a, b) => {
+        if (!!a.grade === !!b.grade) {
+            return 0;
+        }
+        return a.grade ? 1 : -1;
+    });
+
+    return sortedList;
+}
+
+function sortByOldest(prListItems: PrListItem[]): PrListItem[] {
+    const sortedList = [ ...prListItems ];
+    sortedList.sort((a, b) => a.submittedDate.getTime() - b.submittedDate.getTime());
+
+    return sortedList;
+}
+
 interface PrListItem {
     label: string,
     href: string,
@@ -96,7 +115,7 @@ const InstructorListPage = () => {
             return <BodyText>Loading...</BodyText>;
         }
         if (prListData && prListData.length) {
-            return <PrListTable prListData={convertToPrListItem(prListData, grades, setGradeData)} />;
+            return <PrListTable prListData={sortByReviewed(sortByOldest(convertToPrListItem(prListData, grades, setGradeData)))} showAssignee={true} />;
         }
         return <BodyText>Nothing to show here</BodyText>;
     }
@@ -119,7 +138,7 @@ const VolunteerListPage = () => {
         }
         const filteredListData = filterByAssignee(username!, prListData || []);
         if (filteredListData.length) {
-            return <PrListTable prListData={convertToPrListItem(filteredListData, grades, setGradeData)} />;
+            return <PrListTable prListData={sortByReviewed(sortByOldest(convertToPrListItem(filteredListData, grades, setGradeData)))} showAssignee={false} />;
         }
         return <BodyText>You don't have any PRs assigned to you yet!</BodyText>;
     }
@@ -140,6 +159,7 @@ const VolunteerListPage = () => {
 
 interface PrListTableProps {
     prListData: PrListItem[],
+    showAssignee: boolean,
 }
 
 const ListTableRoot = styled(`table`)({
@@ -185,7 +205,7 @@ const TableLink = styled(`a`)({
 
 const TableInternalLink = TableLink.withComponent(Link);
 
-const PrListTable: React.FC<PrListTableProps> = ({ prListData }) => (
+const PrListTable: React.FC<PrListTableProps> = ({ prListData, showAssignee }) => (
     <ListTableRoot>
         <ListTableHead>
             <tr>
@@ -193,22 +213,24 @@ const PrListTable: React.FC<PrListTableProps> = ({ prListData }) => (
                 <ListTableHeader>Project Repo</ListTableHeader>
                 <ListTableHeader>Student</ListTableHeader>
                 <ListTableHeader>Submitted</ListTableHeader>
+                <ListTableHeader>Assignee</ListTableHeader>
                 <ListTableHeader>Feedback Status</ListTableHeader>
                 <ListTableHeader>Grade</ListTableHeader>
                 <ListTableHeader>Set grade</ListTableHeader>
             </tr>
         </ListTableHead>
         <ListTableBody>
-            {prListData.map((prListItem) => <PrListRow prListItem={prListItem} key={prListItem.href}/>)}
+            {prListData.map((prListItem) => <PrListRow prListItem={prListItem} key={prListItem.href} showAssignee={showAssignee}/>)}
         </ListTableBody>
     </ListTableRoot>
 );
 
 interface PrListRowProps {
     prListItem: PrListItem,
+    showAssignee: boolean,
 }
 
-const PrListRow: React.FC<PrListRowProps> = ({ prListItem }) => {
+const PrListRow: React.FC<PrListRowProps> = ({ prListItem, showAssignee }) => {
     const setGradeToGreen = () => prListItem.updateGrade('green');
     return (
         <TableListRow>
@@ -216,6 +238,7 @@ const PrListRow: React.FC<PrListRowProps> = ({ prListItem }) => {
             <ListTableCell>{prListItem.repo}</ListTableCell>
             <ListTableCell>{prListItem.studentUsername}</ListTableCell>
             <ListTableCell>{prListItem.submittedDate.toLocaleDateString()}</ListTableCell>
+            {showAssignee && <ListTableCell>{prListItem.assigneeUsername}</ListTableCell>}
             <ListTableCell>
                 {prListItem.feedbackCommentHref ?
                     <TableLink href={prListItem.feedbackCommentHref}>View feedback</TableLink> :
