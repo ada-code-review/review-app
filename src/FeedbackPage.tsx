@@ -5,10 +5,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircle } from '@fortawesome/free-regular-svg-icons'
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 import { Main, Header1, BodyText, BodyTextLink, BodyOL } from './sharedStyleComponents';
+import { useFetchFromGithub, useFetchText } from './fetchFromGithub';
 import { Grade } from './fetchFromFirebase';
 import { colors, fonts } from './designTokens';
 import { Spacer, InlineSpacer } from './Spacer';
-import { useFetchFromGithub } from './fetchFromGithub';
 
 interface FeedbackPageParams {
     id: string,
@@ -22,65 +22,51 @@ interface FeedbackPageProps extends RouteComponentProps<FeedbackPageParams> {
 
 interface PrData {
     label: string,
-    repo: string,
     href: string,
     authorUsername: string,
-    commentNumber: number,
-    feedbackMarkdown: string,
+    comments: number,
+    submitFeedbackUrl: string,
     grade: Grade | null,
 }
+interface PrBackendData {
+    title: string,
+    number: number, // PR number for that repo
+    html_url: string,
+    user: {
+        login: string, // author's github username
+    },
+    review_comments: number,
+    review_comments_url: string //for submission to backend
+}
 
-const mockFeedbackMarkdown = `
-**Core Requirements**
-Git hygiene |
-Comprehension questions |
-
-**Functionality**
-Click a button to load and view a list of trips |
-Clicking the "load" button twice does not cause each trip to display twice |
-Click a trip to load and view trip details |
-Clicking a different trip loads different details |
-Open network tab, then fill out a form to reserve a spot |
-Submitting the form only sends one POST request |
-Errors are reported to the user |
-Site is clearly laid out and easy to navigate |
-
-**Under the Hood**
-Callback functions are not nested more than 2 levels deep |
-`;
-
-const mockPrData: PrData = {
-    label: `#45 - This is my PR title`,
-    repo: `Ada-11/Trek`,
-    href: `https://github.com/Ada-C11/trek/pull/45`,
-    authorUsername: `somegithubusername`,
-    commentNumber: 1,
-    feedbackMarkdown: mockFeedbackMarkdown,
-    grade: null,
+function useFetchFeedbackData(project: string,) {
+    return useFetchText(`https://raw.githubusercontent.com/${project}/master/feedback.md`);
 }
 
 function useFetchPrData(org: string, repo: string, prId: string,) {
     const path = `repos/${org}/${repo}/pulls/${prId}`
-    const {data, error, isLoading} = useFetchFromGithub<PrData>(path);
+    const {data, error, isLoading} = useFetchFromGithub<PrBackendData>(path);
     return {
-        prData: data,
+        prBackendData: data,
         isLoading: isLoading,
         error
     }
 }
 
-function useMockPrData(prId: string,) {
-    const [isLoading, setIsLoading] = React.useState<boolean>(true);
-    const [prData, setPrData] = React.useState<PrData | null>(null);
-    useEffect(() => {
-        setIsLoading(true);
-        setTimeout(() => {
-            setPrData(mockPrData);
-            setIsLoading(false);
-        }, 1000);
-    }, [prId]);
+function convertToPrData(prBackendData: PrBackendData): PrData {
+    prBackendData.title = prBackendData.title.trim()
+    if (prBackendData.title.length > 20) {
+        prBackendData.title = `${prBackendData.title.substring(0,20).trim()}...`
+    }
 
-    return { mockData: prData, mockIsLoading: isLoading };
+    return {
+        label: `${prBackendData.number}-${prBackendData.title}`,
+        href: prBackendData.html_url,
+        authorUsername: prBackendData.user.login,
+        comments: prBackendData.review_comments,
+        submitFeedbackUrl: prBackendData.review_comments_url,
+        grade: null, // TODO get grade?
+    };
 }
 
 const Subtitle = styled(`h2`)({
@@ -218,15 +204,14 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
     const org = match.params.org;
     const repo = match.params.repo;
     const prId = match.params.id;
-    // TODO: use real data here
-    const { mockData, mockIsLoading } = useMockPrData(prId);
-    const { prData, isLoading } = useFetchPrData(org, repo, prId);
-    console.log(prData, "DATA")
-    const [feedbackFormText, setFeedbackFormText] = React.useState(mockData && mockData.feedbackMarkdown || ``);
+    const {data: feedbackMarkdown} = useFetchFeedbackData(`${org}/${repo}`);
+    const { prBackendData, isLoading } = useFetchPrData(org, repo, prId);
+    const prData = prBackendData ? convertToPrData(prBackendData) : null;
+    const [feedbackFormText, setFeedbackFormText] = React.useState(feedbackMarkdown);
 
     React.useEffect(() => {
-        setFeedbackFormText(mockData && mockData.feedbackMarkdown || ``);
-    }, [prId, mockData]);
+        setFeedbackFormText(feedbackMarkdown);
+    }, [prId, prData]);
 
     const handleFeedbackFormInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setFeedbackFormText(e.target.value);
@@ -235,27 +220,27 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
     // TODO: make these do something
     const refreshData = () => undefined;
     const handleGradeChange = (newGrade: Grade) => undefined;
-    const submitFormData = () => undefined;
+    const submitFormData = () => undefined; // use POST submitFeedbackUrl
 
     function getContents() {
         if (isLoading) {
             return <BodyText>Loading...</BodyText>;
         }
-        if (!mockData) {
+        if (!prData) {
             return <BodyText>Nothing to show here</BodyText>;
         }
         return (
             <React.Fragment>
-                <Subtitle>{prData && prData.repo}</Subtitle>
+                <Subtitle>{repo}</Subtitle>
                 <TitleLayout>
                     <Title>{prData && prData.label}</Title>
-                    <PrLink>{prData && prData.href}</PrLink>
+                    <PrLink href={prData.href} target='_blank'>{prData && prData.href}</PrLink>
                 </TitleLayout>
                 <BodyText>
                     Providing complete feedback on a student’s work involves three distinct steps:
                 </BodyText>
                 <StyledOrderedList>
-                    <li>Give inline feedback by <BodyTextLink href={prData && prData.href}>commenting on the pull request on GitHub</BodyTextLink>.</li>
+                    <li>Give inline feedback by <BodyTextLink href={prData.href} target='_blank'>commenting on the pull request on GitHub</BodyTextLink>.</li>
                     <li>Edit the markdown field below, providing your feedback on the features listed.</li>
                     <li>Assign an overall grade (green, yellow, red) for this PR.</li>
                 </StyledOrderedList>
@@ -267,15 +252,15 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
                 <FormBottomBar>
                     <FormBottomBarLeft>
                         <CommentIndicator
-                            hasComment={prData && prData.comments}
+                            hasComment={prData && prData.comments > 0}
                             refreshData={refreshData}
                         />
                     </FormBottomBarLeft>
                     <FormBottomBarRight>
-                        <GradeSelector grade={mockData && mockData.grade} onChange={handleGradeChange}/>
+                        <GradeSelector grade={prData && prData.grade} onChange={handleGradeChange}/>
                         <Spacer width={20}/>
                         <SubmitButton
-                            disabled={prData && !prData.comments}
+                            disabled={prData && prData.comments == 0}
                             onClick={submitFormData}
                         >
                             Submit Feedback
