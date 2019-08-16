@@ -45,6 +45,10 @@ function convertToPrListItem(prListItems: PrItemBackend[], grades: AllGradeData,
         if (backendItem.title.length > 20) {
             backendItem.title = `${backendItem.title.substring(0,20).trim()}...`
         }
+        if (backendItem.user.login === `sallyamoore`) {
+            console.log(backendItem);
+            console.log(gradeData);
+        }
         const updateGrade = (newGrade: Grade) => {
             setGrade(backendItem.id, {
                 grade: newGrade,
@@ -103,7 +107,8 @@ function useFetchListData() {
     const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS, });
     const {data, error, isLoading} = useFetchFromGithub<ListFetchData>(`search/issues?q=${query}&per_page=100&sort=updated&order=desc`);
 
-    const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase(`/grades/`);
+    const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase();
+    console.log(grades);
 
     return {
         prListData: data && data.items || null,
@@ -220,7 +225,7 @@ const PrListTable: React.FC<PrListTableProps> = ({ prListData, showAssignee }) =
                 <ListTableHeader>Project Repo</ListTableHeader>
                 <ListTableHeader>Student</ListTableHeader>
                 <ListTableHeader>Submitted</ListTableHeader>
-                <ListTableHeader>Assignee</ListTableHeader>
+                {showAssignee && <ListTableHeader>Assignee</ListTableHeader>}
                 <ListTableHeader>Feedback Status</ListTableHeader>
                 <ListTableHeader>Grade</ListTableHeader>
             </tr>

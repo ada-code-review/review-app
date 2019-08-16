@@ -5,8 +5,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircle } from '@fortawesome/free-regular-svg-icons'
 import { faCheckCircle, faCaretDown } from '@fortawesome/free-solid-svg-icons';
 import { Main, Header1, BodyText, BodyTextLink, BodyOL } from './sharedStyleComponents';
-import { useFetchFromGithub, useFetchText } from './fetchFromGithub';
-import { Grade } from './fetchFromFirebase';
+import { useFetchFromGithub, useFetchText, fetchFromGithub } from './fetchFromGithub';
+import { Grade, GradeData, AllGradeData, useFetchFromFirebase } from './fetchFromFirebase';
 import { colors, fonts } from './designTokens';
 import { Spacer, InlineSpacer } from './Spacer';
 import { NullableGradeProp, GradeMenu } from './GradeMenu';
@@ -22,15 +22,23 @@ interface FeedbackPageProps extends RouteComponentProps<FeedbackPageParams> {
 
 }
 
+interface SubmitEndpointResponse {
+    html_url: string,
+}
+
 interface PrData {
+    id: number,
     label: string,
     href: string,
     authorUsername: string,
     comments: number,
-    submitFeedbackUrl: string,
+    submitFeedbackPath: string,
     grade: Grade | null,
+    setGradeData: (newGradeData: GradeData) => void,
+    feedbackMarkdown: string,
 }
 interface PrBackendData {
+    id: number,
     title: string,
     number: number, // PR number for that repo
     html_url: string,
@@ -38,36 +46,55 @@ interface PrBackendData {
         login: string, // author's github username
     },
     review_comments: number,
-    review_comments_url: string //for submission to backend
+    comments_url: string, //for submission to backend
+    issue_url: string,
+}
+
+interface PrIssueBackendData {
+    id: number,
 }
 
 function useFetchFeedbackData(project: string,) {
     return useFetchText(`https://raw.githubusercontent.com/${project}/master/feedback.md`);
 }
 
-function useFetchPrData(org: string, repo: string, prId: string,) {
+function useFetchPrData(org: string, repo: string, prId: string) {
     const path = `repos/${org}/${repo}/pulls/${prId}`
-    const {data, error, isLoading} = useFetchFromGithub<PrBackendData>(path);
+    const {data: prData, error: prError, isLoading: isLoadingGithub} = useFetchFromGithub<PrBackendData>(path);
+    const issuePath = prData ? new URL(prData.issue_url).pathname.slice(1) : null;
+    const { data: issueData, error: issueError, isLoading: isLoadingIssue } = useFetchFromGithub<PrIssueBackendData>(issuePath);
+    const { data: feedbackMarkdown, isLoading: isLoadingMarkdown} = useFetchFeedbackData(`${org}/${repo}`)
+    const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase();
     return {
-        prBackendData: data,
-        isLoading: isLoading,
-        error
+        prData: prData && issueData && grades && typeof feedbackMarkdown === `string` ? convertToPrData(prData, issueData, grades, setGradeData, feedbackMarkdown) : null,
+        isLoading: isLoadingGithub || isLoadingIssue || isLoadingFirebase || isLoadingMarkdown,
+        prError,
     }
 }
 
-function convertToPrData(prBackendData: PrBackendData): PrData {
+function convertToPrData(
+    prBackendData: PrBackendData,
+    issueData: PrIssueBackendData,
+    allGradeData: AllGradeData,
+    setGradeData: (prId: number, newData: GradeData) => void,
+    feedbackMarkdown: string,
+): PrData {
     prBackendData.title = prBackendData.title.trim()
     if (prBackendData.title.length > 20) {
         prBackendData.title = `${prBackendData.title.substring(0,20).trim()}...`
     }
+    const gradeData = allGradeData[issueData.id];
 
     return {
+        id: issueData.id,
         label: `${prBackendData.number} - ${prBackendData.title}`,
         href: prBackendData.html_url,
         authorUsername: prBackendData.user.login,
         comments: prBackendData.review_comments,
-        submitFeedbackUrl: prBackendData.review_comments_url,
-        grade: null, // TODO get grade?
+        submitFeedbackPath: new URL(prBackendData.comments_url).pathname.slice(1),
+        grade: gradeData ? gradeData.grade : null,
+        setGradeData: (gradeData: GradeData) => setGradeData(issueData.id, gradeData),
+        feedbackMarkdown,
     };
 }
 
@@ -174,7 +201,7 @@ const CommentIndicator: React.FC<{ hasComment: boolean, refreshData: () => void 
 
 // TODO: fill out this component
 const GradeSelector: React.FC<{ grade: Grade | null, onChange: (newGrade: Grade) => void}> = ({ grade, onChange }) => (
-    <GradeMenu grade={grade} onSelect={(grade) => console.log(grade)} placement='auto'>
+    <GradeMenu grade={grade} onSelect={onChange} placement='auto'>
         Grade this Pull Request
     </GradeMenu>
 );
@@ -192,6 +219,7 @@ const SubmitButton = styled(`button`)({
     paddingLeft: 20,
     paddingRight: 20,
     cursor: `pointer`,
+    whiteSpace: `nowrap`,
     ':hover': {
         backgroundColor: colors.tealDark,
         borderColor: colors.tealDark,
@@ -209,14 +237,18 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
     const repo = match.params.repo;
     const project = `${org}/${repo}`
     const prId = match.params.id;
-    const {data: feedbackMarkdown} = useFetchFeedbackData(project);
-    const { prBackendData, isLoading } = useFetchPrData(org, repo, prId);
-    const prData = prBackendData ? convertToPrData(prBackendData) : null;
-    const [feedbackFormText, setFeedbackFormText] = React.useState(feedbackMarkdown);
+    const { prData, isLoading } = useFetchPrData(org, repo, prId);
+    const [feedbackFormText, setFeedbackFormText] = React.useState(prData ? prData.feedbackMarkdown : ``);
+    const [grade, setGrade] = React.useState(prData ? prData.grade : null);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     React.useEffect(() => {
-        setFeedbackFormText(feedbackMarkdown);
-    }, [prId, prData]);
+        setFeedbackFormText(prData ? prData.feedbackMarkdown : ``);
+    }, [prId, prData ? prData.feedbackMarkdown : ``]);
+
+    React.useEffect(() => {
+        setGrade(prData ? prData.grade : null);
+    }, [prId, prData ? prData.grade : null]);
 
     const handleFeedbackFormInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setFeedbackFormText(e.target.value);
@@ -224,28 +256,47 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
 
     // TODO: make these do something
     const refreshData = () => undefined;
-    const handleGradeChange = (newGrade: Grade) => undefined;
-    const submitFormData = () => undefined; // use POST submitFeedbackUrl
+    const submitFormData = () => {
+        if (!prData || !grade) {
+            return;
+        }
+        setIsSubmitting(true);
+        fetchFromGithub(prData.submitFeedbackPath, {
+            method: `POST`,
+            body: JSON.stringify({
+                body: feedbackFormText,
+            }),
+        })
+            .then((response) => {
+                const { html_url } = response as SubmitEndpointResponse;
+                prData.setGradeData({
+                    commentUrl: html_url,
+                    grade,
+                });
+                window.location.href = html_url;
+            });
+    };
 
     function getContents() {
         if (isLoading) {
             return <BodyText>Loading...</BodyText>;
         }
         if (!prData) {
-            return <BodyText>Nothing to show here</BodyText>;
+            return <BodyText>Uh oh! It looks like this PR doesn't exist.</BodyText>;
         }
+        const prInfo = prData!;
         return (
             <React.Fragment>
                 <Subtitle>{project}</Subtitle>
                 <TitleLayout>
-                    <Title>{prData && prData.label}</Title>
-                    <PrLink href={prData.href} target='_blank'>{prData && prData.href}</PrLink>
+                    <Title>{prInfo.label}</Title>
+                    <PrLink href={prInfo.href} target='_blank'>{prInfo.href}</PrLink>
                 </TitleLayout>
                 <BodyText>
                     Providing complete feedback on a student’s work involves three distinct steps:
                 </BodyText>
                 <StyledOrderedList>
-                    <li>Give inline feedback by <BodyTextLink href={prData.href} target='_blank'>commenting on the pull request on GitHub</BodyTextLink>.</li>
+                    <li>Give inline feedback by <BodyTextLink href={prInfo.href} target='_blank'>commenting on the pull request on GitHub</BodyTextLink>.</li>
                     <li>Edit the markdown field below, providing your feedback on the features listed.</li>
                     <li>Assign an overall grade (green, yellow, red) for this PR.</li>
                 </StyledOrderedList>
@@ -257,18 +308,18 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
                 <FormBottomBar>
                     <FormBottomBarLeft>
                         <CommentIndicator
-                            hasComment={prData && prData.comments > 0}
+                            hasComment={prInfo.comments > 0}
                             refreshData={refreshData}
                         />
                     </FormBottomBarLeft>
                     <FormBottomBarRight>
-                        <GradeSelector grade={prData && prData.grade} onChange={handleGradeChange}/>
+                        <GradeSelector grade={grade} onChange={setGrade}/>
                         <Spacer width={20}/>
                         <SubmitButton
-                            disabled={prData && prData.comments == 0}
+                            disabled={prInfo.comments == 0 || isSubmitting || !grade}
                             onClick={submitFormData}
                         >
-                            Submit Feedback
+                            {isSubmitting ? `Submitting...` : `Submit Feedback` }
                         </SubmitButton>
                     </FormBottomBarRight>
                 </FormBottomBar>
