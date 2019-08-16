@@ -117,6 +117,7 @@ class App extends React.Component {
                             >
                               <div className="card-body">
                                 <h5 className="card-title">{grade.color}</h5>
+                                <h5 className="card-title">{grade.url}</h5>
                                 <button
                                   onClick={() => this.removeData(grade)}
                                   className="btn btn-link"
@@ -163,16 +164,6 @@ class App extends React.Component {
                               Save
                             </button>
                           </form>
-                        </div>
-                      </div>
-                      <div className="row">
-                        <div className="col-xl-12">
-                          <h3>
-                            Tutorial{" "}
-                            <a href="https://sebhastian.com/react-firebase-real-time-database-gurle">
-                              here
-                            </a>
-                          </h3>
                         </div>
                       </div>
                     </div>
