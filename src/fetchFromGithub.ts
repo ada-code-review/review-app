@@ -2,6 +2,15 @@ import { userStoreApi } from './stores/UserStore';
 import { useState, useEffect } from "react";
 import { GITHUB_BASE_URL } from './constants';
 
+export interface RequestError {
+    statusCode: number,
+    statusText: string,
+    body: {
+        message: string,
+        documentation_url: string,
+    } | null,
+}
+
 function fetchFromGithub<T>(url: string, options?: RequestInit, accessToken?: String) {
     options = options || {};
     options.headers = {
@@ -11,7 +20,34 @@ function fetchFromGithub<T>(url: string, options?: RequestInit, accessToken?: St
 
     // TODO: if the endpoint returns a non-200, this will return the error response
     // instead of throwing
-    return fetch(GITHUB_BASE_URL + url, options).then((response => response.json() as Promise<T>));
+    return fetch(GITHUB_BASE_URL + url, options)
+        .then((response) => {
+            return response.json()
+                .then((responseBody) => {
+                    if (response.ok) {
+                        return responseBody as T;
+                    }
+                    // Successfully parsed the response body into JSON, but the
+                    // network request did not return a 2xx
+                    throw ({
+                        statusCode: response.status,
+                        statusText: response.statusText,
+                        body: responseBody,
+                    });
+                })
+                .catch((error) => {
+                    // make sure we don't catch the error thrown above!
+                    if (error && error.statusCode) {
+                        throw error;
+                    }
+                    // Failed to parse the response body, report error without a body
+                    throw ({
+                        statusCode: response.status,
+                        statusText: response.statusText,
+                        body: null,
+                    });
+                });
+        });
 };
 
 function formatSearchQuery(params: {[key:string]: string|string[] }) {
@@ -26,8 +62,8 @@ function formatSearchQuery(params: {[key:string]: string|string[] }) {
 }
 
 function useFetchFromGithub<T>(url: string, options?: RequestInit) {
-    const [data, setDataState] = useState< T | undefined >(undefined);
-    const [error, setErrorState] = useState< string | undefined > (undefined);
+    const [data, setDataState] = useState<T>();
+    const [error, setErrorState] = useState<Error | RequestError>();
     const [isLoading, setIsLoadingState] = useState(true);
     useEffect(
         () => {
