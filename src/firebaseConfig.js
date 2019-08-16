@@ -1,11 +1,11 @@
 const config = {
-    apiKey: "AIzaSyAlxBNLZRz7Xw4r9sJFPQoGT-j2Ay_Tb6Q",
-    authDomain: "ada-explorathon.firebaseapp.com",
-    databaseURL: "https://ada-explorathon.firebaseio.com",
-    projectId: "ada-explorathon",
-    storageBucket: "",
-    messagingSenderId: "96962293250",
-    appId: "1:96962293250:web:536a0e85b54502a7"
+    apiKey: "AIzaSyCkIJR0up2NGV4W3wvpv1uTG0209FPomsc",
+    authDomain: "cs-review-cec91.firebaseapp.com",
+    databaseURL: "https://cs-review-cec91.firebaseio.com",
+    projectId: "cs-review-cec91",
+    storageBucket: "",
+    messagingSenderId: "185710825858",
+    appId: "1:185710825858:web:e7263ea485048a71"
 };
 
 export default config;

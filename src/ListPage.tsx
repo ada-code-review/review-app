@@ -5,11 +5,18 @@ import { Link } from 'react-router-dom';
 import { useUserStore, UserState } from './stores/UserStore';
 import { Header1, BodyText, BodyTextLink } from './sharedStyleComponents';
 import { formatSearchQuery, useFetchFromGithub } from './fetchFromGithub';
+import { useFetchFromFirebase, GradeData, Grade, AllGradeData } from './fetchFromFirebase';
 import { GITHUB_ORGS } from './constants';
 import { fonts, colors } from './designTokens';
 
-interface PrListDataBackend {
-    id: string, // unique PR ID across all of github
+interface ListFetchData {
+    total_count: number,
+    incomplete_results: boolean,
+    items: PrItemBackend[],
+}
+
+interface PrItemBackend {
+    id: number, // unique PR ID across all of github
     number: number, // PR number for that repo
     title: string, // user defined title of PR
     html_url: string, // URL to actual pull request
@@ -24,63 +31,71 @@ interface PrListDataBackend {
 
 }
 
-interface PrListData {
+function filterByAssignee(username: string, prListItems: PrItemBackend[]): PrItemBackend[] {
+    // return prListItems.filter((item) => !!item.assignee && item.assignee.login === username);
+    return prListItems;
+}
+
+function convertToPrListItem(prListItems: PrItemBackend[], grades: AllGradeData, setGrade: (prId: number, grade: GradeData) => void): PrListItem[] {
+    return prListItems.map((backendItem) => {
+        const repoUrl = new URL(backendItem.repository_url);
+        const gradeData = grades[backendItem.id] || null;
+        const updateGrade = (newGrade: Grade) => {
+            setGrade(backendItem.id, {
+                grade: newGrade,
+                commentUrl: null,
+            });
+        }
+        return {
+            label: `${backendItem.number}-${backendItem.title}`,
+            href: backendItem.html_url,
+            repo: repoUrl.pathname.replace(`/repos/`, ``),
+            studentUsername: backendItem.user.login,
+            assigneeUsername: backendItem.assignee && backendItem.assignee.login,
+            submittedDate: new Date(backendItem.created_at),
+            grade: gradeData ? gradeData.grade : null,
+            updateGrade,
+            feedbackCommentHref: gradeData ? gradeData.commentUrl : null,
+            submitFeedbackUrl: `/feedback/${backendItem.id}`,
+        };
+    });
+}
+
+interface PrListItem {
     label: string,
     href: string,
     repo: string,
     studentUsername: string,
     assigneeUsername: string | null,
     submittedDate: Date,
-    grade: 'green' | 'yellow' | 'red' | null,
+    grade: Grade | null,
     feedbackCommentHref: string | null,
     submitFeedbackUrl: string,
+    updateGrade: (newGrade: Grade) => void,
 }
 
-const mockPrListData: PrListData[] = [
-    {
-        label: `#1 - Pr test`,
-        href: `https://github.com/ada-code-review/calculator/pull/1`,
-        repo: `Ada-C12/calculator`,
-        studentUsername: `laneia`,
-        assigneeUsername: `reviewername`,
-        submittedDate: new Date(),
-        grade: `green`,
-        feedbackCommentHref: `https://github.com/ada-code-review/calculator/pull/1#pullrequestreview-275576848`,
-        submitFeedbackUrl: `/feedback/12345`,
-    },
-    {
-        label: `#15 - My awesome PR`,
-        href: `https://github.com/ada-code-review/calculator/pull/2`,
-        repo: `Ada-C12/calculator`,
-        studentUsername: `laneia`,
-        assigneeUsername: null,
-        submittedDate: new Date(),
-        grade: null,
-        feedbackCommentHref: null,
-        submitFeedbackUrl: `/feedback/23456`,
-    },
-    {
-        label: `#3 - Some other PR name`,
-        href: `https://github.com/ada-code-review/calculator/pull/3`,
-        repo: `Ada-C12/calculator`,
-        studentUsername: `laneia`,
-        assigneeUsername: `reviewername`,
-        submittedDate: new Date(),
-        grade: null,
-        feedbackCommentHref: null,
-        submitFeedbackUrl: `/feedback/34567`,
-    },
-];
+const InstructorListPage = () => {
+    const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS });
+    const {data, error, isLoading} = useFetchFromGithub<ListFetchData>(`search/issues?q=${query}`);
 
-const InstructorListPage = () => (
-    <div>
-        <Header1>Student Pull Requests</Header1>
-    </div>
-);
+    const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase();
+    return (
+        <div>
+            <Header1>Student Pull Requests</Header1>
+            {!isLoading && data && data.items ?
+                <PrListTable prListData={convertToPrListItem(data.items, grades, setGradeData)} />:
+                <BodyText>Loading...</BodyText>
+            }
+        </div>
+    );
+};
 
 const VolunteerListPage = () => {
-    const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS});
-    const {data, error, isLoading} = useFetchFromGithub(`search/issues?q=${query}`);
+    // const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS, per_page: `100`, sort: `updated`, order: `desc`});
+    const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS });
+    const {data, error, isLoading} = useFetchFromGithub<ListFetchData>(`search/issues?q=${query}`);
+
+    const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase();
 
     return (
         <div>
@@ -91,14 +106,16 @@ const VolunteerListPage = () => {
                 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
                 laboris nisi ut aliquip ex ea commodo consequat. <BodyTextLink>Read more</BodyTextLink>
             </BodyText>
-            Open PRs: {isLoading ? '...loading...' : data && data.items.length + " of " + data.total_count}
-            <PrListTable prListData={mockPrListData}/>
+            {!isLoading && !isLoadingFirebase && data && data.items ?
+                <PrListTable prListData={convertToPrListItem(data.items, grades, setGradeData)} />:
+                <BodyText>Loading...</BodyText>
+            }
         </div>
     );
 };
 
 interface PrListTableProps {
-    prListData: PrListData[],
+    prListData: PrListItem[],
 }
 
 const ListTableRoot = styled(`table`)({
@@ -116,13 +133,15 @@ const ListTableHeader = styled(`th`)({
     fontSize: 14,
     color: colors.teal100,
     fontWeight: `bold`,
-    paddingTop: 14,
-    paddingBottom: 10,
+    paddingLeft: 5,
+    paddingRight: 5,
 });
 
 const ListTableCell = styled(`td`)({
     paddingTop: 14,
     paddingBottom: 10,
+    paddingLeft: 5,
+    paddingRight: 5,
 });
 
 const ListTableBody = styled(`tbody`)({
@@ -152,33 +171,38 @@ const PrListTable: React.FC<PrListTableProps> = ({ prListData }) => (
                 <ListTableHeader>Submitted</ListTableHeader>
                 <ListTableHeader>Feedback Status</ListTableHeader>
                 <ListTableHeader>Grade</ListTableHeader>
+                <ListTableHeader>Set grade</ListTableHeader>
             </tr>
         </ListTableHead>
         <ListTableBody>
-            {prListData.map((data) => <PrListRow prListData={data} key={data.href}/>)}
+            {prListData.map((prListItem) => <PrListRow prListItem={prListItem} key={prListItem.href}/>)}
         </ListTableBody>
     </ListTableRoot>
 );
 
 interface PrListRowProps {
-    prListData: PrListData,
+    prListItem: PrListItem,
 }
 
-const PrListRow: React.FC<PrListRowProps> = ({ prListData }) => (
-    <TableListRow>
-        <ListTableCell><TableLink href={prListData.href}>{prListData.label}</TableLink></ListTableCell>
-        <ListTableCell>{prListData.repo}</ListTableCell>
-        <ListTableCell>{prListData.studentUsername}</ListTableCell>
-        <ListTableCell>{prListData.submittedDate.toLocaleDateString()}</ListTableCell>
-        <ListTableCell>
-            {prListData.feedbackCommentHref ?
-                <TableLink href={prListData.feedbackCommentHref}>View feedback</TableLink> :
-                <TableInternalLink to={prListData.submitFeedbackUrl}>Submit feedback</TableInternalLink>
-            }
-        </ListTableCell>
-        <ListTableCell>{prListData.grade}</ListTableCell>
-    </TableListRow>
-);
+const PrListRow: React.FC<PrListRowProps> = ({ prListItem }) => {
+    const setGradeToGreen = () => prListItem.updateGrade('green');
+    return (
+        <TableListRow>
+            <ListTableCell><TableLink href={prListItem.href}>{prListItem.label}</TableLink></ListTableCell>
+            <ListTableCell>{prListItem.repo}</ListTableCell>
+            <ListTableCell>{prListItem.studentUsername}</ListTableCell>
+            <ListTableCell>{prListItem.submittedDate.toLocaleDateString()}</ListTableCell>
+            <ListTableCell>
+                {prListItem.feedbackCommentHref ?
+                    <TableLink href={prListItem.feedbackCommentHref}>View feedback</TableLink> :
+                    <TableInternalLink to={prListItem.submitFeedbackUrl}>Submit feedback</TableInternalLink>
+                }
+            </ListTableCell>
+            <ListTableCell>{prListItem.grade}</ListTableCell>
+            <ListTableCell><button onClick={setGradeToGreen}>Make grade green</button></ListTableCell>
+        </TableListRow>
+    );
+};
 
 export const ListPage = () => {
     const userStore: UserState = useUserStore();
