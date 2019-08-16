@@ -238,7 +238,7 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
                     Providing complete feedback on a student’s work involves three distinct steps:
                 </BodyText>
                 <StyledOrderedList>
-                    <li>Give inline feedback by <BodyTextLink href={prData.href}>commenting on the pull request on GitHub</BodyTextLink>.</li>
+                    <li>Give inline feedback by <BodyTextLink href={prData.href} target='_blank'>commenting on the pull request on GitHub</BodyTextLink>.</li>
                     <li>Edit the markdown field below, providing your feedback on the features listed.</li>
                     <li>Assign an overall grade (green, yellow, red) for this PR.</li>
                 </StyledOrderedList>

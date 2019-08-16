@@ -12,8 +12,8 @@ import { UnauthorizedPage } from './UnauthorizedPage';
 import { fonts } from './designTokens';
 
 import { useUserStore, UserState, Credentials, UserRole, isSignedIn } from './stores/UserStore';
-import { fetchFromGithub } from './fetchFromGithub';
-import { GITHUB_ROLE_ORGANIZATION } from './constants';
+import { fetchFromGithub, RequestError } from './fetchFromGithub';
+import { VOLUNTEER_TEAM_ID, INSTRUCTOR_TEAM_ID } from './constants';
 
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 
@@ -36,27 +36,17 @@ interface UserData {
   login: string,
 }
 
-interface TeamInfo {
-  name: string,
-  organization: {
-    login: string,
-  },
+interface MembershipInfo {
+  url: string,
+  role: 'maintainer' | 'member',
+  state: 'active' | 'pending',
 }
 
-function getRole(teams: TeamInfo[]): UserRole {
-  // TODO: figure out why user/teams isn't returning all the teams the user is a part of
-  return `instructors`;
-  // const identifierTeam = teams.find((team) => team.organization.login === GITHUB_ROLE_ORGANIZATION);
-  // if (!identifierTeam) {
-  //   return `unauthorized`
-  // }
-  // if (identifierTeam.name === `instructors`) {
-  //   return `instructors`;
-  // }
-  // if (identifierTeam.name === `volunteers`) {
-  //   return `volunteers`;
-  // }
-  // return `unauthorized`;
+function catch404(e: Error | RequestError) {
+  if (e && (e as RequestError).statusCode === 404) {
+    return null;
+  }
+  throw e;
 }
 
 const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
@@ -65,19 +55,30 @@ const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
   function signIn() {
     return signInWithGithub()
       .then(({user, credential}) => {
-        Promise.all([
-          fetchFromGithub<UserData>(`user`, undefined, credential.accessToken),
-          fetchFromGithub<TeamInfo[]>(`user/teams`, undefined, credential.accessToken),
-        ]).then(([userData, teamsData]) => {
-          const username = userData.login;
-          const role = getRole(teamsData);
-          userStore.signIn({
-            username,
-            user,
-            credentials: credential,
-            role,
+        fetchFromGithub<UserData>(`user`, undefined, credential.accessToken)
+          .then((userData) => {
+            const username = userData.login;
+            Promise.all([
+              fetchFromGithub<MembershipInfo>(`teams/${VOLUNTEER_TEAM_ID}/memberships/${username}`, undefined, credential.accessToken)
+                .catch(catch404),
+              fetchFromGithub<MembershipInfo>(`teams/${INSTRUCTOR_TEAM_ID}/memberships/${username}`, undefined, credential.accessToken)
+              .catch(catch404),
+            ]).then(([volunteerMembershipInfo, instructorMembershipInfo]) => {
+              let role: UserRole = `unauthorized`;
+              if (volunteerMembershipInfo) {
+                role = `volunteers`;
+              }
+              if (instructorMembershipInfo) {
+                role = `instructors`;
+              }
+              userStore.signIn({
+                username,
+                user,
+                credentials: credential,
+                role,
+              });
+            });
           });
-        });
       });
   }
 

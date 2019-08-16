@@ -238,14 +238,14 @@ const PrListRow: React.FC<PrListRowProps> = ({ prListItem, showAssignee }) => {
     const setGradeToGreen = () => prListItem.updateGrade('green');
     return (
         <TableListRow>
-            <ListTableCell><TableLink href={prListItem.href}>{prListItem.label}</TableLink></ListTableCell>
+            <ListTableCell><TableLink href={prListItem.href} target='_blank'>{prListItem.label}</TableLink></ListTableCell>
             <ListTableCell>{prListItem.repo}</ListTableCell>
             <ListTableCell>{prListItem.studentUsername}</ListTableCell>
             <ListTableCell>{prListItem.submittedDate.toLocaleDateString()}</ListTableCell>
             {showAssignee && <ListTableCell>{prListItem.assigneeUsername}</ListTableCell>}
             <ListTableCell>
                 {prListItem.feedbackCommentHref ?
-                    <TableLink href={prListItem.feedbackCommentHref}>View feedback</TableLink> :
+                    <TableLink href={prListItem.feedbackCommentHref} target='_blank'>View feedback</TableLink> :
                     <TableInternalLink to={prListItem.submitFeedbackUrl}>Submit feedback</TableInternalLink>
                 }
             </ListTableCell>
