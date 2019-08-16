@@ -16,13 +16,9 @@ const firebaseApp = firebase.initializeApp(firebaseConfig);
 
 const Root = styled(`div`)({
   fontFamily: fonts.openSans,
-});
-
-const Main = styled(`main`)({
-  paddingLeft: 125,
-  paddingRight: 125,
-  paddingTop: 60,
-  paddingBottom: 60,
+  display: `flex`,
+  flexDirection: `column`,
+  minHeight: `100vh`,
 });
 
 interface AppProps extends WrappedComponentProps {
@@ -66,7 +62,6 @@ const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
     <Router>
       <Root>
         <Nav signOut={signOutUser}/>
-        <Main>
           {userStore.user ? (
             <Switch>
               <Route path='/' exact component={ListPage}/>
@@ -76,7 +71,6 @@ const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
           ): (
             <SignInPage signIn={signIn}/>
           )}
-        </Main>
       </Root>
     </Router>
   );

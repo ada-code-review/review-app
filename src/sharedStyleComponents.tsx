@@ -1,6 +1,13 @@
 import styled from '@emotion/styled';
 import { colors, fonts } from './designTokens';
 
+export const Main = styled(`main`)({
+    paddingLeft: 125,
+    paddingRight: 125,
+    paddingTop: 60,
+    paddingBottom: 60,
+});
+
 export const Header1 = styled(`h1`)({
     color: colors.nearBlack,
     fontSize: 44,
@@ -8,6 +15,14 @@ export const Header1 = styled(`h1`)({
     fontFamily: fonts.georgia,
     fontWeight: `normal`,
 });
+
+export const Header3 = styled(`h1`)({
+    color: colors.nearBlack,
+    fontSize: 30,
+    lineHeight: 1,
+    fontFamily: fonts.georgia,
+    fontWeight: `normal`,
+})
 
 export const BodyText = styled(`p`)({
     color: colors.nearBlack,
