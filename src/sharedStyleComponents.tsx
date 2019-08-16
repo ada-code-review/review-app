@@ -40,3 +40,11 @@ export const BodyTextLink = styled(`a`)({
     cursor: `pointer`,
     textDecoration: `none`,
 });
+
+export const BodyOL = styled(`ol`)({
+    color: colors.nearBlack,
+    fontSize: 16,
+    lineHeight: 1.62,
+    fontFamily: fonts.openSans,
+    paddingLeft: `1em`,
+})

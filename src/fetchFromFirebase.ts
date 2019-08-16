@@ -12,7 +12,7 @@ export interface AllGradeData {
     [prId: number]: GradeData,
 }
 
-function useFetchFromFirebase() {
+function useFetchFromFirebase(path: string) {
     const [grades, setGradesState] = useState< AllGradeData>({});
     const [isLoading, setIsLoadingState] = useState(true);
 
@@ -22,7 +22,7 @@ function useFetchFromFirebase() {
             // TODO: memory leak here?
             firebase
                 .database()
-                .ref(`/grades/`)
+                .ref(path)
                 .on(`value`, snapshot => {
                     const firebaseGrades: GradeData[] = snapshot.val() || {};
                     setGradesState(firebaseGrades);
@@ -41,7 +41,7 @@ function useFetchFromFirebase() {
         
         firebase
             .database()
-            .ref(`/grades/`)
+            .ref(path)
             .set(newGradeData);
 
     }

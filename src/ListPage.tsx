@@ -32,8 +32,7 @@ interface PrItemBackend {
 }
 
 function filterByAssignee(username: string, prListItems: PrItemBackend[]): PrItemBackend[] {
-    // return prListItems.filter((item) => !!item.assignee && item.assignee.login === username);
-    return prListItems;
+    return prListItems.filter((item) => !!item.assignee && item.assignee.login === username);
 }
 
 function convertToPrListItem(prListItems: PrItemBackend[], grades: AllGradeData, setGrade: (prId: number, grade: GradeData) => void): PrListItem[] {
@@ -61,6 +60,25 @@ function convertToPrListItem(prListItems: PrItemBackend[], grades: AllGradeData,
     });
 }
 
+function sortByReviewed(prListItems: PrListItem[]): PrListItem[] {
+    const sortedList = [ ...prListItems ];
+    sortedList.sort((a, b) => {
+        if (!!a.grade === !!b.grade) {
+            return 0;
+        }
+        return a.grade ? 1 : -1;
+    });
+
+    return sortedList;
+}
+
+function sortByOldest(prListItems: PrListItem[]): PrListItem[] {
+    const sortedList = [ ...prListItems ];
+    sortedList.sort((a, b) => a.submittedDate.getTime() - b.submittedDate.getTime());
+
+    return sortedList;
+}
+
 interface PrListItem {
     label: string,
     href: string,
@@ -74,28 +92,56 @@ interface PrListItem {
     updateGrade: (newGrade: Grade) => void,
 }
 
-const InstructorListPage = () => {
-    const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS });
-    const {data, error, isLoading} = useFetchFromGithub<ListFetchData>(`search/issues?q=${query}`);
+function useFetchListData() {
+    const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS, });
+    const {data, error, isLoading} = useFetchFromGithub<ListFetchData>(`search/issues?q=${query}&per_page=100&sort=updated&order=desc`);
 
-    const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase();
+    const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase(`/grades/`);
+
+    return {
+        prListData: data && data.items || null,
+        grades,
+        isLoading: isLoading || isLoadingFirebase,
+        error,
+        setGradeData,
+    }
+}
+
+const InstructorListPage = () => {
+    const { prListData, grades, isLoading, error, setGradeData } = useFetchListData();
+
+    function getContents() {
+        if (isLoading) {
+            return <BodyText>Loading...</BodyText>;
+        }
+        if (prListData && prListData.length) {
+            return <PrListTable prListData={sortByReviewed(sortByOldest(convertToPrListItem(prListData, grades, setGradeData)))} showAssignee={true} />;
+        }
+        return <BodyText>Nothing to show here</BodyText>;
+    }
+
     return (
         <Main>
             <Header1>Student Pull Requests</Header1>
-            {!isLoading && data && data.items ?
-                <PrListTable prListData={convertToPrListItem(data.items, grades, setGradeData)} />:
-                <BodyText>Loading...</BodyText>
-            }
+            {getContents()}
         </Main>
     );
 };
 
 const VolunteerListPage = () => {
-    // const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS, per_page: `100`, sort: `updated`, order: `desc`});
-    const query = formatSearchQuery({is: 'open', org: GITHUB_ORGS });
-    const {data, error, isLoading} = useFetchFromGithub<ListFetchData>(`search/issues?q=${query}`);
+    const username = useUserStore(state => state.username);
+    const { prListData, grades, isLoading, error, setGradeData } = useFetchListData();
 
-    const { grades, isLoadingFirebase, setGradeData } = useFetchFromFirebase();
+    function getContents() {
+        if (isLoading) {
+            return <BodyText>Loading...</BodyText>;
+        }
+        const filteredListData = filterByAssignee(username!, prListData || []);
+        if (filteredListData.length) {
+            return <PrListTable prListData={sortByReviewed(sortByOldest(convertToPrListItem(filteredListData, grades, setGradeData)))} showAssignee={false} />;
+        }
+        return <BodyText>You don't have any PRs assigned to you yet!</BodyText>;
+    }
 
     return (
         <Main>
@@ -106,16 +152,14 @@ const VolunteerListPage = () => {
                 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
                 laboris nisi ut aliquip ex ea commodo consequat. <BodyTextLink>Read more</BodyTextLink>
             </BodyText>
-            {!isLoading && !isLoadingFirebase && data && data.items ?
-                <PrListTable prListData={convertToPrListItem(data.items, grades, setGradeData)} />:
-                <BodyText>Loading...</BodyText>
-            }
+            {getContents()}
         </Main>
     );
 };
 
 interface PrListTableProps {
     prListData: PrListItem[],
+    showAssignee: boolean,
 }
 
 const ListTableRoot = styled(`table`)({
@@ -161,7 +205,7 @@ const TableLink = styled(`a`)({
 
 const TableInternalLink = TableLink.withComponent(Link);
 
-const PrListTable: React.FC<PrListTableProps> = ({ prListData }) => (
+const PrListTable: React.FC<PrListTableProps> = ({ prListData, showAssignee }) => (
     <ListTableRoot>
         <ListTableHead>
             <tr>
@@ -169,22 +213,24 @@ const PrListTable: React.FC<PrListTableProps> = ({ prListData }) => (
                 <ListTableHeader>Project Repo</ListTableHeader>
                 <ListTableHeader>Student</ListTableHeader>
                 <ListTableHeader>Submitted</ListTableHeader>
+                <ListTableHeader>Assignee</ListTableHeader>
                 <ListTableHeader>Feedback Status</ListTableHeader>
                 <ListTableHeader>Grade</ListTableHeader>
                 <ListTableHeader>Set grade</ListTableHeader>
             </tr>
         </ListTableHead>
         <ListTableBody>
-            {prListData.map((prListItem) => <PrListRow prListItem={prListItem} key={prListItem.href}/>)}
+            {prListData.map((prListItem) => <PrListRow prListItem={prListItem} key={prListItem.href} showAssignee={showAssignee}/>)}
         </ListTableBody>
     </ListTableRoot>
 );
 
 interface PrListRowProps {
     prListItem: PrListItem,
+    showAssignee: boolean,
 }
 
-const PrListRow: React.FC<PrListRowProps> = ({ prListItem }) => {
+const PrListRow: React.FC<PrListRowProps> = ({ prListItem, showAssignee }) => {
     const setGradeToGreen = () => prListItem.updateGrade('green');
     return (
         <TableListRow>
@@ -192,6 +238,7 @@ const PrListRow: React.FC<PrListRowProps> = ({ prListItem }) => {
             <ListTableCell>{prListItem.repo}</ListTableCell>
             <ListTableCell>{prListItem.studentUsername}</ListTableCell>
             <ListTableCell>{prListItem.submittedDate.toLocaleDateString()}</ListTableCell>
+            {showAssignee && <ListTableCell>{prListItem.assigneeUsername}</ListTableCell>}
             <ListTableCell>
                 {prListItem.feedbackCommentHref ?
                     <TableLink href={prListItem.feedbackCommentHref}>View feedback</TableLink> :

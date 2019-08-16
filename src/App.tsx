@@ -8,9 +8,12 @@ import { Nav } from './NavBar';
 import { SignInPage } from './SignInPage';
 import { FeedbackPage } from './FeedbackPage';
 import { ListPage } from './ListPage';
+import { UnauthorizedPage } from './UnauthorizedPage';
 import { fonts } from './designTokens';
 
-import { useUserStore, UserState, Credentials, UserRole } from './stores/UserStore';
+import { useUserStore, UserState, Credentials, UserRole, isSignedIn } from './stores/UserStore';
+import { fetchFromGithub } from './fetchFromGithub';
+import { GITHUB_ROLE_ORGANIZATION } from './constants';
 
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 
@@ -29,13 +32,31 @@ const RedirectToHomePage = () => (
   <Redirect to='/'/>
 );
 
-function retrieveUserRole(credential: Credentials) {
-  // mocked for now
-  return new Promise<UserRole>((resolve) => {
-    setTimeout(() => {
-      resolve(`volunteers`);
-    }, 1000);
-  });
+interface UserData {
+  login: string,
+}
+
+interface TeamInfo {
+  name: string,
+  organization: {
+    login: string,
+  },
+}
+
+function getRole(teams: TeamInfo[]): UserRole {
+  // TODO: figure out why user/teams isn't returning all the teams the user is a part of
+  return `instructors`;
+  // const identifierTeam = teams.find((team) => team.organization.login === GITHUB_ROLE_ORGANIZATION);
+  // if (!identifierTeam) {
+  //   return `unauthorized`
+  // }
+  // if (identifierTeam.name === `instructors`) {
+  //   return `instructors`;
+  // }
+  // if (identifierTeam.name === `volunteers`) {
+  //   return `volunteers`;
+  // }
+  // return `unauthorized`;
 }
 
 const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
@@ -44,8 +65,14 @@ const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
   function signIn() {
     return signInWithGithub()
       .then(({user, credential}) => {
-        retrieveUserRole(credential).then((role) => {
+        Promise.all([
+          fetchFromGithub<UserData>(`user`, undefined, credential.accessToken),
+          fetchFromGithub<TeamInfo[]>(`user/teams`, undefined, credential.accessToken),
+        ]).then(([userData, teamsData]) => {
+          const username = userData.login;
+          const role = getRole(teamsData);
           userStore.signIn({
+            username,
             user,
             credentials: credential,
             role,
@@ -56,21 +83,30 @@ const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
 
   function signOutUser() {
     userStore.signOut();
+    signOut();
+  }
+
+  function getContents() {
+    if (!isSignedIn(userStore)) {
+      return <SignInPage signIn={signIn}/>
+    }
+    if (userStore.role === `unauthorized`) {
+      return <UnauthorizedPage />;
+    }
+    return (
+      <Switch>
+        <Route path='/' exact component={ListPage}/>
+        <Route path='/feedback/:id' component={FeedbackPage}/>
+        <Route component={RedirectToHomePage}/>
+      </Switch>
+    );
   }
 
   return (
     <Router>
       <Root>
         <Nav signOut={signOutUser}/>
-          {userStore.user ? (
-            <Switch>
-              <Route path='/' exact component={ListPage}/>
-              <Route path='/feedback/:id' component={FeedbackPage}/>
-              <Route component={RedirectToHomePage}/>
-            </Switch>
-          ): (
-            <SignInPage signIn={signIn}/>
-          )}
+        {getContents()}
       </Root>
     </Router>
   );
@@ -80,6 +116,10 @@ const firebaseAppAuth = firebaseApp.auth();
 const providers = {
   githubProvider: new firebase.auth.GithubAuthProvider(),
 };
+
+providers.githubProvider.addScope(`user`);
+providers.githubProvider.addScope(`repo`);
+providers.githubProvider.addScope(`read:org`);
 
 export default withFirebaseAuth({
   providers,

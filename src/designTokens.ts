@@ -2,6 +2,7 @@ export const colors = {
     tealDark: `#496B73`,
     teal100: `#5A848D`,
     teal50: `#B6C9CD`,
+    teal20: `#ACC1C6`,
     teal10: `#EFF3F4`,
     pumpkin100: `#CC6957`,
     pumpkin10: `#FAF0EE`,
@@ -12,5 +13,6 @@ export const colors = {
 
 export const fonts = {
     georgia: `Georgia, serif`,
-    openSans: `Open Sans, sans-serif`,
+    openSans: `"Open Sans", sans-serif`,
+    ptMono: `"PT Mono", monopace`,
 }
