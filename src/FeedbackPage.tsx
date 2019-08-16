@@ -8,9 +8,12 @@ import { Main, Header1, BodyText, BodyTextLink, BodyOL } from './sharedStyleComp
 import { Grade } from './fetchFromFirebase';
 import { colors, fonts } from './designTokens';
 import { Spacer, InlineSpacer } from './Spacer';
+import { useFetchFromGithub } from './fetchFromGithub';
 
 interface FeedbackPageParams {
     id: string,
+    org: string,
+    repo: string,
 }
 
 interface FeedbackPageProps extends RouteComponentProps<FeedbackPageParams> {
@@ -29,18 +32,18 @@ interface PrData {
 
 const mockFeedbackMarkdown = `
 **Core Requirements**
-Git hygiene | 
-Comprehension questions | 
+Git hygiene |
+Comprehension questions |
 
 **Functionality**
-Click a button to load and view a list of trips | 
-Clicking the "load" button twice does not cause each trip to display twice | 
-Click a trip to load and view trip details | 
-Clicking a different trip loads different details | 
-Open network tab, then fill out a form to reserve a spot | 
-Submitting the form only sends one POST request | 
-Errors are reported to the user | 
-Site is clearly laid out and easy to navigate | 
+Click a button to load and view a list of trips |
+Clicking the "load" button twice does not cause each trip to display twice |
+Click a trip to load and view trip details |
+Clicking a different trip loads different details |
+Open network tab, then fill out a form to reserve a spot |
+Submitting the form only sends one POST request |
+Errors are reported to the user |
+Site is clearly laid out and easy to navigate |
 
 **Under the Hood**
 Callback functions are not nested more than 2 levels deep |
@@ -56,6 +59,16 @@ const mockPrData: PrData = {
     grade: null,
 }
 
+function useFetchPrData(org: string, repo: string, prId: string,) {
+    const path = `repos/${org}/${repo}/pulls/${prId}`
+    const {data, error, isLoading} = useFetchFromGithub<PrData>(path);
+    return {
+        prData: data,
+        isLoading: isLoading,
+        error
+    }
+}
+
 function useMockPrData(prId: string,) {
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [prData, setPrData] = React.useState<PrData | null>(null);
@@ -67,7 +80,7 @@ function useMockPrData(prId: string,) {
         }, 1000);
     }, [prId]);
 
-    return { prData, isLoading };
+    return { mockData: prData, mockIsLoading: isLoading };
 }
 
 const Subtitle = styled(`h2`)({
@@ -202,14 +215,18 @@ const SubmitButton = styled(`button`)({
 });
 
 export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
+    const org = match.params.org;
+    const repo = match.params.repo;
     const prId = match.params.id;
     // TODO: use real data here
-    const { prData, isLoading } = useMockPrData(prId);
-    const [feedbackFormText, setFeedbackFormText] = React.useState(prData && prData.feedbackMarkdown || ``);
+    const { mockData, mockIsLoading } = useMockPrData(prId);
+    const { prData, isLoading } = useFetchPrData(org, repo, prId);
+    console.log(prData, "DATA")
+    const [feedbackFormText, setFeedbackFormText] = React.useState(mockData && mockData.feedbackMarkdown || ``);
 
     React.useEffect(() => {
-        setFeedbackFormText(prData && prData.feedbackMarkdown || ``);
-    }, [prId, prData]);
+        setFeedbackFormText(mockData && mockData.feedbackMarkdown || ``);
+    }, [prId, mockData]);
 
     const handleFeedbackFormInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setFeedbackFormText(e.target.value);
@@ -224,21 +241,21 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
         if (isLoading) {
             return <BodyText>Loading...</BodyText>;
         }
-        if (!prData) {
+        if (!mockData) {
             return <BodyText>Nothing to show here</BodyText>;
         }
         return (
             <React.Fragment>
-                <Subtitle>{prData.repo}</Subtitle>
+                <Subtitle>{prData && prData.repo}</Subtitle>
                 <TitleLayout>
-                    <Title>{prData.label}</Title>
-                    <PrLink>{prData.href}</PrLink>
+                    <Title>{prData && prData.label}</Title>
+                    <PrLink>{prData && prData.href}</PrLink>
                 </TitleLayout>
                 <BodyText>
                     Providing complete feedback on a student’s work involves three distinct steps:
                 </BodyText>
                 <StyledOrderedList>
-                    <li>Give inline feedback by <BodyTextLink href={prData.href}>commenting on the pull request on GitHub</BodyTextLink>.</li>
+                    <li>Give inline feedback by <BodyTextLink href={prData && prData.href}>commenting on the pull request on GitHub</BodyTextLink>.</li>
                     <li>Edit the markdown field below, providing your feedback on the features listed.</li>
                     <li>Assign an overall grade (green, yellow, red) for this PR.</li>
                 </StyledOrderedList>
@@ -250,15 +267,15 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
                 <FormBottomBar>
                     <FormBottomBarLeft>
                         <CommentIndicator
-                            hasComment={prData.commentNumber > 0}
+                            hasComment={prData && prData.comments}
                             refreshData={refreshData}
                         />
                     </FormBottomBarLeft>
                     <FormBottomBarRight>
-                        <GradeSelector grade={prData.grade} onChange={handleGradeChange}/>
+                        <GradeSelector grade={mockData && mockData.grade} onChange={handleGradeChange}/>
                         <Spacer width={20}/>
                         <SubmitButton
-                            disabled={!prData.commentNumber}
+                            disabled={prData && !prData.comments}
                             onClick={submitFormData}
                         >
                             Submit Feedback

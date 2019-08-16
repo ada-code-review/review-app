@@ -96,7 +96,7 @@ const App: React.FC<AppProps> = ({ signOut, signInWithGithub }) => {
     return (
       <Switch>
         <Route path='/' exact component={ListPage}/>
-        <Route path='/feedback/:id' component={FeedbackPage}/>
+        <Route path='/feedback/:org/:repo/:id' component={FeedbackPage}/>
         <Route component={RedirectToHomePage}/>
       </Switch>
     );
