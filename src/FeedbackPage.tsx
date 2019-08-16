@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircle } from '@fortawesome/free-regular-svg-icons'
 import { faCheckCircle, faCaretDown } from '@fortawesome/free-solid-svg-icons';
 import { Main, Header1, BodyText, BodyTextLink, BodyOL } from './sharedStyleComponents';
-import { useFetchFromGithub, useFetchText } from './fetchFromGithub';
+import { useFetchFromGithub, useFetchText, fetchFromGithub } from './fetchFromGithub';
 import { Grade } from './fetchFromFirebase';
 import { colors, fonts } from './designTokens';
 import { Spacer, InlineSpacer } from './Spacer';
@@ -22,15 +22,21 @@ interface FeedbackPageProps extends RouteComponentProps<FeedbackPageParams> {
 
 }
 
+interface SubmitEndpointResponse {
+    html_url: string,
+}
+
 interface PrData {
+    id: number,
     label: string,
     href: string,
     authorUsername: string,
     comments: number,
-    submitFeedbackUrl: string,
+    submitFeedbackPath: string,
     grade: Grade | null,
 }
 interface PrBackendData {
+    id: number,
     title: string,
     number: number, // PR number for that repo
     html_url: string,
@@ -38,7 +44,7 @@ interface PrBackendData {
         login: string, // author's github username
     },
     review_comments: number,
-    review_comments_url: string //for submission to backend
+    comments_url: string //for submission to backend
 }
 
 function useFetchFeedbackData(project: string,) {
@@ -49,7 +55,7 @@ function useFetchPrData(org: string, repo: string, prId: string,) {
     const path = `repos/${org}/${repo}/pulls/${prId}`
     const {data, error, isLoading} = useFetchFromGithub<PrBackendData>(path);
     return {
-        prBackendData: data,
+        prData: data ? convertToPrData(data) : null,
         isLoading: isLoading,
         error
     }
@@ -62,11 +68,12 @@ function convertToPrData(prBackendData: PrBackendData): PrData {
     }
 
     return {
+        id: prBackendData.id,
         label: `${prBackendData.number} - ${prBackendData.title}`,
         href: prBackendData.html_url,
         authorUsername: prBackendData.user.login,
         comments: prBackendData.review_comments,
-        submitFeedbackUrl: prBackendData.review_comments_url,
+        submitFeedbackPath: new URL(prBackendData.comments_url).pathname.slice(1),
         grade: null, // TODO get grade?
     };
 }
@@ -209,16 +216,18 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
     const repo = match.params.repo;
     const project = `${org}/${repo}`
     const prId = match.params.id;
-    const {data: feedbackMarkdown} = useFetchFeedbackData(project);
-    const { prBackendData, isLoading } = useFetchPrData(org, repo, prId);
-    const prData = prBackendData ? convertToPrData(prBackendData) : null;
+    const { data: feedbackMarkdown } = useFetchFeedbackData(project);
+    const { prData, isLoading } = useFetchPrData(org, repo, prId);
+    const prDataId = prData ? prData.id : null;
     const [feedbackFormText, setFeedbackFormText] = React.useState(feedbackMarkdown);
     const [grade, setGrade] = React.useState(prData ? prData.grade : null);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     React.useEffect(() => {
+        console.log(`setting to default`);
         setFeedbackFormText(feedbackMarkdown);
         setGrade(prData ? grade : null);
-    }, [prId, prData, feedbackMarkdown]);
+    }, [prId, prDataId, feedbackMarkdown]);
 
     const handleFeedbackFormInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setFeedbackFormText(e.target.value);
@@ -227,7 +236,21 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
     // TODO: make these do something
     const refreshData = () => undefined;
     const submitFormData = () => {
-
+        if (!prData) {
+            return;
+        }
+        setIsSubmitting(true);
+        fetchFromGithub(prData.submitFeedbackPath, {
+            method: `POST`,
+            body: JSON.stringify({
+                body: feedbackFormText,
+            }),
+        })
+            .then((response) => {
+                // TODO: update firebase here
+                const { html_url } = response as SubmitEndpointResponse;
+                window.location.href = html_url;
+            });
     };
 
     function getContents() {
@@ -269,10 +292,10 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
                         <GradeSelector grade={prInfo.grade} onChange={setGrade}/>
                         <Spacer width={20}/>
                         <SubmitButton
-                            disabled={prInfo.comments == 0}
+                            disabled={prInfo.comments == 0 || isSubmitting}
                             onClick={submitFormData}
                         >
-                            Submit Feedback
+                            {isSubmitting ? `Submitting...` : `Submit Feedback` }
                         </SubmitButton>
                     </FormBottomBarRight>
                 </FormBottomBar>
