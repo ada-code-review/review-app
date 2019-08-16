@@ -17,11 +17,10 @@ function fetchFromGithub<T>(url: string, options?: RequestInit, accessToken?: St
         ...options.headers,
         authorization: `Bearer ${accessToken || userStoreApi.getState().accessToken}`
     };
-    url = url.indexOf('https') === 0 ? url : GITHUB_BASE_URL + url;
 
     // TODO: if the endpoint returns a non-200, this will return the error response
     // instead of throwing
-    return fetch(url, options)
+    return fetch(GITHUB_BASE_URL + url, options)
         .then((response) => {
             return response.json()
                 .then((responseBody) => {
