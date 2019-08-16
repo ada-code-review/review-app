@@ -225,7 +225,7 @@ const PrListTable: React.FC<PrListTableProps> = ({ prListData, showAssignee }) =
                 <ListTableHeader>Project Repo</ListTableHeader>
                 <ListTableHeader>Student</ListTableHeader>
                 <ListTableHeader>Submitted</ListTableHeader>
-                <ListTableHeader>Assignee</ListTableHeader>
+                {showAssignee && <ListTableHeader>Assignee</ListTableHeader>}
                 <ListTableHeader>Feedback Status</ListTableHeader>
                 <ListTableHeader>Grade</ListTableHeader>
             </tr>
