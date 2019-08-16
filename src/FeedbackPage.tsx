@@ -3,12 +3,14 @@ import React, { useEffect } from 'react';
 import styled from '@emotion/styled';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircle } from '@fortawesome/free-regular-svg-icons'
-import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import { faCheckCircle, faCaretDown } from '@fortawesome/free-solid-svg-icons';
 import { Main, Header1, BodyText, BodyTextLink, BodyOL } from './sharedStyleComponents';
 import { useFetchFromGithub, useFetchText } from './fetchFromGithub';
 import { Grade } from './fetchFromFirebase';
 import { colors, fonts } from './designTokens';
 import { Spacer, InlineSpacer } from './Spacer';
+import { NullableGradeProp, GradeMenu } from './GradeMenu';
+import { MenuDisclosure } from "reakit";
 
 interface FeedbackPageParams {
     id: string,
@@ -172,7 +174,9 @@ const CommentIndicator: React.FC<{ hasComment: boolean, refreshData: () => void 
 
 // TODO: fill out this component
 const GradeSelector: React.FC<{ grade: Grade | null, onChange: (newGrade: Grade) => void}> = ({ grade, onChange }) => (
-    <div>Grade this Pull Request</div>
+    <GradeMenu grade={grade} onSelect={(grade) => console.log(grade)} placement='auto'>
+        Grade this Pull Request
+    </GradeMenu>
 );
 
 const SubmitButton = styled(`button`)({
@@ -182,7 +186,7 @@ const SubmitButton = styled(`button`)({
     fontWeight: 600,
     borderColor: colors.teal100,
     borderRadius: 8,
-    borderSize: 1,
+    borderWidth: 1,
     paddingTop: 9,
     paddingBottom: 10,
     paddingLeft: 20,
