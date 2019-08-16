@@ -8,15 +8,19 @@ export interface Credentials {
 }
 
 export interface UserState {
+    isLoading: boolean,
     accessToken: String | null,
     username: string | null,
     user: User | null,
-    signIn: (args: { user: User, credentials: Credentials, role: UserRole, username: string }) => void,
+    loadComplete: () => void,
+    startLoad: () => void,
+    signIn: (args: { user: User, accessToken: String, role: UserRole, username: string }) => void,
     signOut: () => void,
     role: UserRole | null,
 }
 
 const initialState = {
+    isLoading: true,
     accessToken: null,
     username: null,
     user: null,
@@ -25,20 +29,23 @@ const initialState = {
 
 const [useUserStore, userStoreApi] = create<UserState>((set, _get) => ({
   ...initialState,
-  signIn: ({ user, credentials, role, username }) => set(state => ({
+  startLoad: () => set(state => ({ ...state, isLoading: true })),
+  loadComplete: () => set(state => ({ ...state, isLoading: false })),
+  signIn: ({ user, accessToken, role, username }) => set(state => ({
       ...state,
       user,
       username,
-      accessToken: credentials.accessToken,
+      accessToken: accessToken,
       role,
+      isLoading: false,
     })),
-  signOut: () => set(state => ({...state, ...initialState})),
+  signOut: () => set(state => ({...state, ...initialState, isLoading: false })),
 }));
 
-const isSignedIn = (state: UserState) => !!state.accessToken
+const getIsSignedIn = (state: UserState) => !!state.accessToken
 
 export {
     useUserStore,
     userStoreApi,
-    isSignedIn,
+    getIsSignedIn,
 };
