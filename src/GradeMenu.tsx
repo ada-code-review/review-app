@@ -23,18 +23,18 @@ export interface NullableGradeProp {
 
 type GradeDisclosureProps = NullableGradeProp & Partial<MenuDisclosureProps>;
 
-export const GradeMenuDisclosure = styled(`button`)<NullableGradeProp>`
-    color: ${colors.white};
-    background: ${(props) => colors.grades[props.grade || 'pending']};
-    border-radius: 50%;
-    border: none;
-    padding: 0;
-    width: 20px;
-    height: 20px;
-    vertical-align: middle;
-    cursor: pointer;
-    outline: none;
-`;
+export const GradeMenuDisclosure = styled(`button`)<NullableGradeProp>(props => ({
+    color: colors.white,
+    background: colors.grades[props.grade || 'pending'],
+    borderRadius: `50%`,
+    border: `none`,
+    padding: 0,
+    width: 20,
+    height: 20,
+    verticalAlign: `middle`,
+    cursor: `pointer`,
+    outline: `none`,
+}));
 
 const GradeButton = styled(`button`)<NullableGradeProp>(props => ({
     backgroundColor: colors.white,
@@ -84,39 +84,39 @@ export const LabeledGradeMenuDisclosure = forwardRef<HTMLButtonElement, GradeDis
     </GradeButton>
 ));
 
-const GradeMenuContainer = styled(Menu)`
-    border: 1px solid ${colors.teal20};
-    border-radius: 8px;
-    box-shadow: 0px 6px 12px ${colors.shadow};
-    z-index: 100;
-    padding: 2px;
-    background: ${colors.white};
-    margin: 0 2em;
-    display: flex;
-    flex-direction: column;
+const GradeMenuContainer = styled(Menu)({
+    border: `1px solid ${colors.teal20}`,
+    borderRadius: 8,
+    boxShadow: `0px 6px 12px ${colors.shadow}`,
+    zIndex: 100,
+    padding: 2,
+    background: colors.white,
+    margin: `0 2em`,
+    display: `flex`,
+    flexDirection: `column`,
 
-    & > :not(:first-child) {
-        border-top: 1px solid ${colors.teal20};
+    "& > :not(:first-child)": {
+        borderTop: `1px solid ${colors.teal20}`,
     }
-`
+});
 
-const GradeMenuItem = styled(MenuItem)<GradeProp>`
-    color: ${(props) => colors.grades[props.grade]};
-    background: ${colors.white};
-    border: none;
-    padding: 8px 16px;
-    display: block;
-    min-width: 10em;
-    font-size: 1em;
-    text-align: left;
-    white-space: nowrap;
-    cursor: pointer;
-    outline: none;
-    &:focus {
-        color: ${colors.white};
-        background: ${(props) => colors.grades[props.grade]};
+const GradeMenuItem = styled(MenuItem)<GradeProp>(props => ({
+    color: colors.grades[props.grade],
+    background: colors.white,
+    border: `none`,
+    padding: `8px 16px`,
+    display: `block`,
+    minWidth: `10em`,
+    fontSize: `1em`,
+    textAlign: `left`,
+    whiteSpace: `nowrap`,
+    cursor: `pointer`,
+    outline: `none`,
+    "&:focus": {
+        color: colors.white,
+        background: colors.grades[props.grade],
     }
-`;
+}));
 
 interface GradeMenuProps {
     placement?: MenuInitialState['placement'];
