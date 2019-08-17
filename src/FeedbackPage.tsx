@@ -1,16 +1,15 @@
+import React from 'react';
 import { RouteComponentProps } from 'react-router-dom';
-import React, { useEffect } from 'react';
 import styled from '@emotion/styled';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircle } from '@fortawesome/free-regular-svg-icons'
-import { faCheckCircle, faCaretDown } from '@fortawesome/free-solid-svg-icons';
+import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 import { Main, Header1, BodyText, BodyTextLink, BodyOL } from './sharedStyleComponents';
 import { useFetchFromGithub, useFetchText, fetchFromGithub } from './fetchFromGithub';
 import { Grade, GradeData, AllGradeData, useFetchFromFirebase } from './fetchFromFirebase';
 import { colors, fonts } from './designTokens';
 import { Spacer, InlineSpacer } from './Spacer';
-import { NullableGradeProp, GradeMenu } from './GradeMenu';
-import { MenuDisclosure } from "reakit";
+import { GradeMenu, LabeledGradeMenuDisclosure } from './GradeMenu';
 
 interface FeedbackPageParams {
     id: string,
@@ -201,8 +200,8 @@ const CommentIndicator: React.FC<{ hasComment: boolean, refreshData: () => void 
 
 // TODO: fill out this component
 const GradeSelector: React.FC<{ grade: Grade | null, onChange: (newGrade: Grade) => void}> = ({ grade, onChange }) => (
-    <GradeMenu grade={grade} onSelect={onChange} placement='auto'>
-        Grade this Pull Request
+    <GradeMenu onSelect={onChange} placement='auto'>
+        {(menu) => <LabeledGradeMenuDisclosure grade={grade} {...menu}/>}
     </GradeMenu>
 );
 

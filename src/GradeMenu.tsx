@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from '@emotion/styled';
-import { Menu, MenuDisclosure, MenuItem, useMenuState, MenuInitialState } from "reakit";
+import { Menu, MenuDisclosure, MenuItem, useMenuState, MenuInitialState, MenuDisclosureProps, MenuStateReturn } from "reakit";
 import { Grade } from './fetchFromFirebase';
 import { colors } from './designTokens';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -21,13 +21,7 @@ export interface NullableGradeProp {
     grade?: Grade | null,
 }
 
-interface GradeMenuProps extends NullableGradeProp {
-    placement?: MenuInitialState['placement'];
-    onSelect: (grade: Grade) => void;
-    compact?: boolean;
-}
-
-const GradeMenuDisclosure = styled(MenuDisclosure)<NullableGradeProp>`
+export const GradeMenuDisclosure = styled(MenuDisclosure)<NullableGradeProp>`
     color: ${colors.white};
     background: ${(props: NullableGradeProp) => colors.grades[props.grade || 'pending']};
     border-radius: 50%;
@@ -71,10 +65,21 @@ const GradeButton = styled(MenuDisclosure)<NullableGradeProp>(props => ({
     },
 }));
 
-const GradeButtonIndicator = styled(`span`)<NullableGradeProp>(props => ({
+const GradeButtonCaret = styled(`span`)<NullableGradeProp>(props => ({
     backgroundColor: colors.grades[props.grade || 'pending'],
     color: colors.white,
 }));
+
+export const LabeledGradeMenuDisclosure: React.FC<NullableGradeProp & MenuDisclosureProps> = (props => (
+    <GradeButton {...props}>
+        <span>
+            {GRADE_DESCRIPTIONS[props.grade || 'pending']}
+        </span>
+        <GradeButtonCaret grade={props.grade}>
+            <FontAwesomeIcon icon={faCaretDown} />
+        </GradeButtonCaret>
+    </GradeButton>
+));
 
 const GradeMenuContainer = styled(Menu)`
     border: 1px solid ${colors.teal20};
@@ -110,32 +115,22 @@ const GradeMenuItem = styled(MenuItem)<GradeProp>`
     }
 `;
 
-const GradeMenu: React.FC<GradeMenuProps> = (({grade, placement, onSelect, compact}) => {
+interface GradeMenuProps {
+    placement?: MenuInitialState['placement'];
+    onSelect: (grade: Grade) => void;
+    children: React.ReactElement | ((m: MenuStateReturn) => React.ReactNode) ;
+}
+
+const GradeMenu: React.FC<GradeMenuProps> = (({placement, onSelect, children}) => {
     const menu = useMenuState({placement});
     const callback = (grade: Grade) => {
         onSelect(grade);
         menu.hide();
     }
 
-    let disclosure;
-    if (!compact) {
-        disclosure = (
-            <GradeButton grade={grade} {...menu}>
-                <span>
-                    {GRADE_DESCRIPTIONS[grade || 'pending']}
-                </span>
-                <GradeButtonIndicator grade={grade}>
-                    <FontAwesomeIcon icon={faCaretDown} />
-                </GradeButtonIndicator>
-            </GradeButton>
-        )
-    } else {
-        disclosure = <GradeMenuDisclosure grade={grade} {...menu} />
-    }
-
     return (
         <div style={{position: `relative`}}>
-            {disclosure}
+            {typeof children === 'function' ? children(menu) : children}
             <GradeMenuContainer {...menu} aria-label="Grades">
                 <GradeMenuItem onClick={()=>{callback('green')}} grade='green' {...menu}>{GRADE_DESCRIPTIONS.green}</GradeMenuItem>
                 <GradeMenuItem onClick={()=>{callback('yellow')}} grade='yellow' {...menu}>{GRADE_DESCRIPTIONS.yellow}</GradeMenuItem>

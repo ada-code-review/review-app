@@ -9,7 +9,7 @@ import { formatSearchQuery, useFetchFromGithub } from './fetchFromGithub';
 import { useFetchFromFirebase, GradeData, Grade, AllGradeData } from './fetchFromFirebase';
 import { GITHUB_ORGS } from './constants';
 import { fonts, colors } from './designTokens';
-import { GradeMenu } from './GradeMenu';
+import { GradeMenu, GradeMenuDisclosure } from './GradeMenu';
 
 interface ListFetchData {
     total_count: number,
@@ -258,7 +258,9 @@ const PrListRow: React.FC<PrListRowProps> = ({ prListItem, showAssignee }) => {
             </ListTableCell>
             <ListTableCell className={css({textAlign: `right`})}>
               {prListItem.grade &&
-                <GradeMenu grade={prListItem.grade} placement='bottom-end' onSelect={setGrade} compact={true}/>
+                <GradeMenu placement='bottom-end' onSelect={setGrade}>
+                    {(menu) => <GradeMenuDisclosure grade={prListItem.grade} {...menu} />}
+                </GradeMenu>
               }
             </ListTableCell>
         </TableListRow>
