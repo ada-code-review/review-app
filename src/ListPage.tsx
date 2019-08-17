@@ -259,7 +259,7 @@ const PrListRow: React.FC<PrListRowProps> = ({ prListItem, showAssignee }) => {
             <ListTableCell className={css({textAlign: `right`})}>
               {prListItem.grade &&
                 <GradeMenu placement='bottom-end' onSelect={setGrade}>
-                    {(menu) => <GradeMenuDisclosure grade={prListItem.grade} {...menu} />}
+                    <GradeMenuDisclosure grade={prListItem.grade} />
                 </GradeMenu>
               }
             </ListTableCell>

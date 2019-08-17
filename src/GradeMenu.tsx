@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { forwardRef, RefForwardingComponent } from 'react';
 import styled from '@emotion/styled';
-import { Menu, MenuDisclosure, MenuItem, useMenuState, MenuInitialState, MenuDisclosureProps, MenuStateReturn } from "reakit";
+import { Menu, MenuDisclosure, MenuItem, useMenuState, MenuInitialState, MenuDisclosureProps } from "reakit";
 import { Grade } from './fetchFromFirebase';
 import { colors } from './designTokens';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -21,9 +21,11 @@ export interface NullableGradeProp {
     grade?: Grade | null,
 }
 
-export const GradeMenuDisclosure = styled(MenuDisclosure)<NullableGradeProp>`
+type GradeDisclosureProps = NullableGradeProp & Partial<MenuDisclosureProps>;
+
+export const GradeMenuDisclosure = styled(`button`)<NullableGradeProp>`
     color: ${colors.white};
-    background: ${(props: NullableGradeProp) => colors.grades[props.grade || 'pending']};
+    background: ${(props) => colors.grades[props.grade || 'pending']};
     border-radius: 50%;
     border: none;
     padding: 0;
@@ -34,7 +36,7 @@ export const GradeMenuDisclosure = styled(MenuDisclosure)<NullableGradeProp>`
     outline: none;
 `;
 
-const GradeButton = styled(MenuDisclosure)<NullableGradeProp>(props => ({
+const GradeButton = styled(`button`)<NullableGradeProp>(props => ({
     backgroundColor: colors.white,
     color: colors.grades[props.grade || 'pending'],
     fontSize: 16,
@@ -70,12 +72,13 @@ const GradeButtonCaret = styled(`span`)<NullableGradeProp>(props => ({
     color: colors.white,
 }));
 
-export const LabeledGradeMenuDisclosure: React.FC<NullableGradeProp & MenuDisclosureProps> = (props => (
-    <GradeButton {...props}>
+export const LabeledGradeMenuDisclosure = forwardRef<HTMLButtonElement, GradeDisclosureProps>(
+    ({grade, ...menu}, ref) => (
+    <GradeButton grade={grade} ref={ref} {...menu}>
         <span>
-            {GRADE_DESCRIPTIONS[props.grade || 'pending']}
+            {GRADE_DESCRIPTIONS[grade || 'pending']}
         </span>
-        <GradeButtonCaret grade={props.grade}>
+        <GradeButtonCaret grade={grade}>
             <FontAwesomeIcon icon={faCaretDown} />
         </GradeButtonCaret>
     </GradeButton>
@@ -98,7 +101,7 @@ const GradeMenuContainer = styled(Menu)`
 `
 
 const GradeMenuItem = styled(MenuItem)<GradeProp>`
-    color: ${(props: GradeProp) => colors.grades[props.grade]};
+    color: ${(props) => colors.grades[props.grade]};
     background: ${colors.white};
     border: none;
     padding: 8px 16px;
@@ -111,14 +114,14 @@ const GradeMenuItem = styled(MenuItem)<GradeProp>`
     outline: none;
     &:focus {
         color: ${colors.white};
-        background: ${(props: GradeProp) => colors.grades[props.grade]};
+        background: ${(props) => colors.grades[props.grade]};
     }
 `;
 
 interface GradeMenuProps {
     placement?: MenuInitialState['placement'];
     onSelect: (grade: Grade) => void;
-    children: React.ReactElement | ((m: MenuStateReturn) => React.ReactNode) ;
+    children: React.ReactElement;
 }
 
 const GradeMenu: React.FC<GradeMenuProps> = (({placement, onSelect, children}) => {
@@ -130,7 +133,11 @@ const GradeMenu: React.FC<GradeMenuProps> = (({placement, onSelect, children}) =
 
     return (
         <div style={{position: `relative`}}>
-            {typeof children === 'function' ? children(menu) : children}
+            <MenuDisclosure {...menu}>
+                {disclosureProps =>
+                    React.cloneElement(React.Children.only(children), disclosureProps)
+                }
+            </MenuDisclosure>
             <GradeMenuContainer {...menu} aria-label="Grades">
                 <GradeMenuItem onClick={()=>{callback('green')}} grade='green' {...menu}>{GRADE_DESCRIPTIONS.green}</GradeMenuItem>
                 <GradeMenuItem onClick={()=>{callback('yellow')}} grade='yellow' {...menu}>{GRADE_DESCRIPTIONS.yellow}</GradeMenuItem>

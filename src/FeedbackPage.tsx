@@ -201,7 +201,7 @@ const CommentIndicator: React.FC<{ hasComment: boolean, refreshData: () => void 
 // TODO: fill out this component
 const GradeSelector: React.FC<{ grade: Grade | null, onChange: (newGrade: Grade) => void}> = ({ grade, onChange }) => (
     <GradeMenu onSelect={onChange} placement='auto'>
-        {(menu) => <LabeledGradeMenuDisclosure grade={grade} {...menu}/>}
+        <LabeledGradeMenuDisclosure grade={grade} />
     </GradeMenu>
 );
 
