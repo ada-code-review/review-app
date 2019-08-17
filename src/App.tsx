@@ -1,7 +1,7 @@
 import withFirebaseAuth, { WrappedComponentProps } from 'react-with-firebase-auth'
 import styled from '@emotion/styled';
 import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
-import * as firebase from 'firebase/app';
+import firebase from 'firebase/app';
 import firebaseConfig from './firebaseConfig';
 import React from 'react';
 import { Nav } from './NavBar';
