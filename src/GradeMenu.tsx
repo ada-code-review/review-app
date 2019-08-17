@@ -85,15 +85,15 @@ export const LabeledGradeMenuDisclosure = forwardRef<HTMLButtonElement, GradeDis
 ));
 
 const GradeMenuContainer = styled(Menu)({
+    display: `flex`,
+    background: colors.white,
     border: `1px solid ${colors.teal20}`,
     borderRadius: 8,
     boxShadow: `0px 6px 12px ${colors.shadow}`,
-    zIndex: 100,
-    padding: 2,
-    background: colors.white,
+    overflow: `hidden`,
     margin: `0 2em`,
-    display: `flex`,
     flexDirection: `column`,
+    zIndex: 100,
 
     "& > :not(:first-child)": {
         borderTop: `1px solid ${colors.teal20}`,
