@@ -69,19 +69,17 @@ To support the distinction between volunteers and instructors, we use Github tea
 
 ### Github Endpoints
 List of endpoints were used to support the existing functionality _or_ would likely be used for some of the extensions we did not complete.
-| Data | Where used | Request |
-| --- | --- | --- |
-| Retrieve all PRs that are open, in specified orgs, and assigned to the specified github user | Volunteer view | GET https://api.github.com/search/issues?q=is:pr+is:open+org:<name of org>+org:<name of org>+assignee:<github username>&per_page=100&sort=updated&order=desc |
-| Get all PRs that are open for specified orgs | Instructor view | GET https://api.github.com/search/issues?q=is:pr+is:open+org:<name of org>+org:<name of org>&per_page=100&sort=updated&order=desc |
-| Get teams for specified user | Login: User Permissions | GET https://api.github.com/user/teams |
-| Retrieve feedback.md text from repo | Feedback view | GET https://raw.githubusercontent.com/ada-code-review/calculator/master/feedback.md |
-| Individual Pull Request data, including whether PR has any review comments | Feedback view | GET https://api.github.com/repos/:org/:repo/pulls/:id |
-| Submit comment (feedback) on PR | Feedback view | POST https://api.github.com/repos/:org/:repo/issues/:id/comments (URL can be retrieved from individual PR data above in `["_links"]["comments"]`) |
-| Add user as a member to org | Not implemented (assign PR to volunteer) | PUT /orgs/:org/memberships/:username |
-| Assign user to teams in org | Not implemented (assign PR to volunteer) | **To get team id:** <br>GET https://api.github.com/orgs/ada-code-review/teams/:team_slug. <br>**To add user:**<br> PUT https://api.github.com/teams/:team_id/memberships/:username |
-| Add a user to a PR as an assignee | Not implemented (assign PR to volunteer) | POST https://api.github.com/repos/:owner/:repo/issues/:issue_number/assignees |
-----
-
+|Data|Where used|Request|
+|---|---|---|
+|Retrieve all PRs that are open, in specified orgs, and assigned to the specified github user|Volunteer view|GET https://api.github.com/search/issues?q=is:pr+is:open+org:<name of org>+org:<name of org>+assignee:<github username>&per_page=100&sort=updated&order=desc|
+|Get all PRs that are open for specified orgs|Instructor view|GET https://api.github.com/search/issues?q=is:pr+is:open+org:<name of org>+org:<name of org>&per_page=100&sort=updated&order=desc|
+|Get teams for specified user|Login: User Permissions|GET https://api.github.com/user/teams|
+|Retrieve feedback.md text from repo|Feedback view|GET https://raw.githubusercontent.com/ada-code-review/calculator/master/feedback.md|
+|Individual Pull Request data, including whether PR has any review comments|Feedback view|GET https://api.github.com/repos/:org/:repo/pulls/:id|
+|Submit comment (feedback) on PR|Feedback view|POST https://api.github.com/repos/:org/:repo/issues/:id/comments (URL can be retrieved from individual PR data above in `["_links"]["comments"]`)|
+|Add user as a member to org|Not implemented (assign PR to volunteer)|PUT /orgs/:org/memberships/:username|
+|Assign user to teams in org|Not implemented (assign PR to volunteer)|**To get team id:** <br>GET https://api.github.com/orgs/ada-code-review/teams/:team_slug. <br>**To add user:**<br> PUT https://api.github.com/teams/:team_id/memberships/:username|
+|Add a user to a PR as an assignee|Not implemented (assign PR to volunteer)|POST https://api.github.com/repos/:owner/:repo/issues/:issue_number/assignees|
 
 # Boilerplate from Create React App
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
