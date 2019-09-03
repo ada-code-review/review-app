@@ -11,7 +11,7 @@ Ada assigns students CS Fundamentals homework via GitHub PRs that are code revie
 The overarching goal of the project is to make it easier for volunteers to join the platform and review students' PRs and for instructors to manage volunteers' workflows.
 
 ## Tech Overview
-The app was created with create-react-app and consists of a React frontend and a minimal Firebase Realtime Database as the backend. It mostly relies on the GitHub API for information about repos, users, etc., thereby persisting only minimal data in the database. The database stores only the info required to associated a PR with it's assigned red/yellow/green grade and provide a direct link to the comment on GitHub.
+The app was created with create-react-app and consists of a React frontend and a minimal Firebase Realtime Database as the backend. It mostly relies on the GitHub API for information about repos, users, etc., thereby persisting only minimal data in the database. The database stores only the info required to associated a PR with its assigned red/yellow/green grade and a direct link to the structured feedback comment on GitHub.
 
 ## Specific Goals
 
@@ -27,10 +27,9 @@ The app was created with create-react-app and consists of a React frontend and a
     - Content of feedback.md is populated into the structured feedback text box
 - Reviewers can provide a red/yellow/green grade
 - Reviews are not considered complete until the review has provided structured feedback, at least one review comment, and a red/yellow/green grade. [IS THIS FULLY COMPLETED?]
-- Red/yellow/green grades can be updated (from the PR list view) after initial review submission.
+- Red/yellow/green grades can be updated (from the PR list view) after initial review submission. [IS THIS FULLY COMPLETED?]
 
 ### Partially Completed
-- Red/yellow/green grade can be updated from the PR list view. [STATUS?]
 - Volunteers are shown guidance about how to conduct a high-quality review.
     - **Status:** View exists with placeholder text; copy needed. "Read more" link is not connected. "Contact an administrator" link is not connected.
 - PR list UX
@@ -53,7 +52,8 @@ To support the distinction between volunteers and instructors, we use GitHub tea
 
 ## Known Bugs/Issues
 - [ANY ISSUES WITH GITHUB ACCESS/SECURITY?]
-- We set the Firebase Realtime Database permissions to be open to all reads/writes. This should be refined for production. [ELY, CAN WE TRANSFER OWNERSHIP OF DB TO CHRIS? OR DOES HE NEED TO CREATE A NEW DB & UPDATE CONFIG?]
+- Ada will need to set up a new Firebase Realtime Database. Setting up the Github app and Firebase database are covered in this [video](https://youtu.be/iwA2xhbM10g). After the initial database info in the very beginning of the video, you can skip to minute 6:13 to see the Github app steps.
+- We set the Firebase Realtime Database permissions to be open to all reads/writes. This should be refined for production.
 - Firebase API key is checked in to GitHub (see `firebaseConfig.js`) but should probably be an environment variable.
 - Possible memory leak (see `firebaseConfig.js`) [ELY, ADD DETAILS?]
 - Could be issues with rate limiting in the GitHub API. Most of the endpoints use the search API, which allows 30 authed requests per minute. If so, replacing calls to their REST API with the GraphQL API would likely remediate.
@@ -64,7 +64,7 @@ To support the distinction between volunteers and instructors, we use GitHub tea
 
 ## Additional information
 - [Trello board](https://trello.com/c/T5brtgAI/17-feedback-submission-v2-checker)
-- [Designs in Figma](https://www.figma.com/file/FZKpIQyavnos1OrKuJp4Q3/Ada-Volunteer-Portal-Exp-Q319?node-id=15%3A0)
+- [Designs](https://www.figma.com/file/FZKpIQyavnos1OrKuJp4Q3/Ada-Volunteer-Portal-Exp-Q319?node-id=15%3A0). We will provide Ada with an exported Figma file, which can be used with another Figma account (free tier options are available) or import into Sketch. We can provide PNG versions as well.
 - Contact at Textio: Sally Moore, sally@textio.com
 
 ### GitHub Endpoints
