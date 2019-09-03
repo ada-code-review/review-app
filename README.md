@@ -54,7 +54,6 @@ To support the distinction between volunteers and instructors, we use GitHub tea
 4) When assigning an instructor or a volunteer a PR to review, add them to the PR as an **assignee** (not a reviewer, due to limitations of the reviewer API). The assignee is used to determine which reviews are assigned to a homework reviewer. The assignee must be added as a member of the org. (A future extension of the project could use the GitHub API to: Have a selector for instructors to assign reviews that 1) adds the homework reviewer to the org if they aren't a member already and 2) adds the reviewer to the PR as an assignee.)
 
 ## Known Bugs/Issues
-- [ANY ISSUES WITH GITHUB ACCESS/SECURITY?]
 - Ada will need to set up a new Firebase Realtime Database. Setting up the Github app and Firebase database are covered in this [video](https://youtu.be/iwA2xhbM10g). After the initial database info in the very beginning of the video, you can skip to minute 6:13 to see the Github app steps.
 - We set the Firebase Realtime Database permissions to be open to all reads/writes. This should be refined for production.
 - Firebase API key is checked in to GitHub (see `firebaseConfig.js`) but should probably be an environment variable.
@@ -67,7 +66,6 @@ To support the distinction between volunteers and instructors, we use GitHub tea
 - Currently, `fetchFromFirebase` is hardcoded to only look up data from the /grades/ table. Ideally this should be refactored so that it is generic, so that it could be used to retrieve/store other data in Firebase.
 - The list of PRs is pulled from a hardcoded list of orgs (see `constants.ts`). This list will need to be updated every time a new Ada cohort is added.
 - To determine whether a user is an instructor or a volunteer, we need to check if they're a member of a "volunteer" or "instructor" team ID in a specific hardcoded org. Right now, the app is using test values (see `constants.ts`), but it should be updated to use an Ada org of your choice. You'll need to use the GitHub API to retrieve the IDs of the volunteer/instructor teams once they've been set up (note that this endpoint is admininistrator-only).
-- [ALL CONTRIBUTORS: PLS REVIEW TODOs AND ADD HERE OR REMOVE]
 
 ## Additional information
 - [Trello board](https://trello.com/c/T5brtgAI/17-feedback-submission-v2-checker)
@@ -79,8 +77,8 @@ List of endpoints were used to support the existing functionality _or_ would lik
 
 |Data|Where used|Request|
 |---|---|---|
-|Retrieve all PRs that are open, in specified orgs, and assigned to the specified github user|Volunteer view|GET https://api.github.com/search/issues?q=is:pr+is:open+org:[org_name]+org:[name  of  org>+assignee:[github  username]&per_page=100&sort=updated&order=desc|
-|Get all PRs that are open for specified orgs|Instructor view|GET https://api.github.com/search/issues?q=is:pr+is:open+org:[name  of  org]+org:[name  of  org]&per_page=100&sort=updated&order=desc|
+|Retrieve all PRs that are open, in specified orgs, and assigned to the specified github user|Volunteer view|GET https://api.github.com/search/issues?q=is:pr+is:open+org:[org_name]+org:[name of org]+assignee:[github username]&per_page=100&sort=updated&order=desc|
+|Get all PRs that are open for specified orgs|Instructor view|GET https://api.github.com/search/issues?q=is:pr+is:open+org:[name of org]+org:[name of org]&per_page=100&sort=updated&order=desc|
 |Get teams for specified user|Login: User Permissions|GET https://api.github.com/user/teams|
 |Retrieve feedback.md text from repo|Feedback view|GET https://raw.githubusercontent.com/ada-code-review/calculator/master/feedback.md|
 |Individual Pull Request data, including whether PR has any review comments|Feedback view|GET https://api.github.com/repos/:org/:repo/pulls/:id|
