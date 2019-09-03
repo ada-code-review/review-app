@@ -26,14 +26,17 @@ The app was created with create-react-app and consists of a React frontend and a
 - Reviewers can provide structured feedback.
     - Content of feedback.md is populated into the structured feedback text box
 - Reviewers can provide a red/yellow/green grade
-- Reviews are not considered complete until the review has provided structured feedback, at least one review comment, and a red/yellow/green grade. [IS THIS FULLY COMPLETED?]
-- Red/yellow/green grades can be updated (from the PR list view) after initial review submission. [IS THIS FULLY COMPLETED?]
+- Reviews are not considered complete until at least one review comment has been left on the PR and a red/yellow/green grade has been selected
+- Red/yellow/green grades can be updated (from the PR list view) after initial review submission.
 
 ### Partially Completed
 - Volunteers are shown guidance about how to conduct a high-quality review.
     - **Status:** View exists with placeholder text; copy needed. "Read more" link is not connected. "Contact an administrator" link is not connected.
 - PR list UX
     - **Status:** Functionality is there, but did not include different coloring for completed reviews or arrow in the grade change dropdown
+- Feedback form
+    - We do not yet enforce that the reviewer has typed in the structured feedback textarea before they can submit.
+
 
 ### Not Completed
 - Deploy to Heroku
@@ -55,11 +58,15 @@ To support the distinction between volunteers and instructors, we use GitHub tea
 - Ada will need to set up a new Firebase Realtime Database. Setting up the Github app and Firebase database are covered in this [video](https://youtu.be/iwA2xhbM10g). After the initial database info in the very beginning of the video, you can skip to minute 6:13 to see the Github app steps.
 - We set the Firebase Realtime Database permissions to be open to all reads/writes. This should be refined for production.
 - Firebase API key is checked in to GitHub (see `firebaseConfig.js`) but should probably be an environment variable.
-- Possible memory leak (see `firebaseConfig.js`) [ELY, ADD DETAILS?]
+- We should check that there isn't a memory leak in components which use the `useFetchFromFirebase` hook. If the component unmounts, we don't want `firebase.database().on('value', callback)` to continue calling the callback (see `fetchFromFirebase.ts`).
 - Could be issues with rate limiting in the GitHub API. Most of the endpoints use the search API, which allows 30 authed requests per minute. If so, replacing calls to their REST API with the GraphQL API would likely remediate.
 - Code structure is not as well-factored as we'd like.
-- In unauthorized user view, "contact an administrator" link is not connected (see `UnauthorizedPage.tsx`).
+- In sign in and unauthorized user views, "contact an administrator" link is not connected (see `SignInPage.tsx`, `UnauthorizedPage.tsx`).
 - In volunteer PR list and sign in views, "read more" link is not connected (see `ListPage.tsx`, `SignInPage.tsx`).
+- In Feedback page, the `Check GitHub` link next to the Comment Indicator is not connected (see `FeedbackPage.tsx`).
+- Currently, `fetchFromFirebase` is hardcoded to only look up data from the /grades/ table. Ideally this should be refactored so that it is generic, so that it could be used to retrieve/store other data in Firebase.
+- The list of PRs is pulled from a hardcoded list of orgs (see `constants.ts`). This list will need to be updated every time a new Ada cohort is added.
+- To determine whether a user is an instructor or a volunteer, we need to check if they're a member of a "volunteer" or "instructor" team ID in a specific hardcoded org. Right now, the app is using test values (see `constants.ts`), but it should be updated to use an Ada org of your choice. You'll need to use the GitHub API to retrieve the IDs of the volunteer/instructor teams once they've been set up (note that this endpoint is admininistrator-only).
 - [ALL CONTRIBUTORS: PLS REVIEW TODOs AND ADD HERE OR REMOVE]
 
 ## Additional information
