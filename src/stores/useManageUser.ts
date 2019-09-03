@@ -3,7 +3,7 @@ import React from 'react';
 
 import { useUserStore, UserState, Credentials, UserRole, getIsSignedIn } from './UserStore';
 import { fetchFromGithub, RequestError } from '../fetchFromGithub';
-import { INSTRUCTOR_TEAM_ID, INSTRUCTOR_TEAM_NAME, VOLUNTEER_TEAM_NAME, VOLUNTEER_TEAM_ID } from '../constants';
+import { INSTRUCTOR_TEAM_ID, VOLUNTEER_TEAM_ID } from '../constants';
 
 interface UserData {
   login: string,
@@ -31,10 +31,10 @@ function getUserRole(username: string, accessToken?: String) {
   ]).then(([volunteerMembershipInfo, instructorMembershipInfo]) => {
     let role: UserRole = `unauthorized`;
     if (volunteerMembershipInfo) {
-      role = VOLUNTEER_TEAM_NAME;
+      role = `volunteers`;
     }
     if (instructorMembershipInfo) {
-      role = INSTRUCTOR_TEAM_NAME;
+      role = `instructors`;
     }
     return role;
   });

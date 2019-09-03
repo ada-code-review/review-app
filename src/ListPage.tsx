@@ -40,20 +40,10 @@ function filterByAssignee(username: string, prListItems: PrItemBackend[]): PrIte
 function convertToPrListItem(prListItems: PrItemBackend[], grades: AllGradeData, setGrade: (prId: number, grade: GradeData) => void): PrListItem[] {
     return prListItems.map((backendItem) => {
         const repoUrl = new URL(backendItem.repository_url);
-        const gradeData = grades[backendItem.id] || null;
+        const gradeData: GradeData | null = grades[backendItem.id] || null;
         backendItem.title = backendItem.title.trim()
         if (backendItem.title.length > 20) {
             backendItem.title = `${backendItem.title.substring(0,20).trim()}...`
-        }
-        if (backendItem.user.login === `sallyamoore`) {
-            console.log(backendItem);
-            console.log(gradeData);
-        }
-        const updateGrade = (newGrade: Grade) => {
-            setGrade(backendItem.id, {
-                grade: newGrade,
-                commentUrl: null,
-            });
         }
         const repo = repoUrl.pathname.replace(`/repos/`, ``);
         return {
@@ -64,7 +54,10 @@ function convertToPrListItem(prListItems: PrItemBackend[], grades: AllGradeData,
             assigneeUsername: backendItem.assignee && backendItem.assignee.login,
             submittedDate: new Date(backendItem.created_at),
             grade: gradeData ? gradeData.grade : null,
-            updateGrade,
+            updateGrade: gradeData ? (newGrade: Grade) => setGrade(backendItem.id, {
+                grade: newGrade,
+                commentUrl: gradeData.commentUrl,
+            }) : null,
             feedbackCommentHref: gradeData ? gradeData.commentUrl : null,
             submitFeedbackUrl: `/feedback/${repo}/${backendItem.number}`,
         };
@@ -100,7 +93,7 @@ interface PrListItem {
     grade: Grade | null,
     feedbackCommentHref: string | null,
     submitFeedbackUrl: string,
-    updateGrade: (newGrade: Grade) => void,
+    updateGrade: ((newGrade: Grade) => void) | null,
 }
 
 function useFetchListData() {
@@ -242,7 +235,6 @@ interface PrListRowProps {
 }
 
 const PrListRow: React.FC<PrListRowProps> = ({ prListItem, showAssignee }) => {
-    const setGrade = (grade: Grade) => prListItem.updateGrade(grade);
     return (
         <TableListRow>
             <ListTableCell><TableLink href={prListItem.href} target='_blank'>{prListItem.label}</TableLink></ListTableCell>
@@ -257,8 +249,8 @@ const PrListRow: React.FC<PrListRowProps> = ({ prListItem, showAssignee }) => {
                 }
             </ListTableCell>
             <ListTableCell className={css({textAlign: `right`})}>
-              {prListItem.grade &&
-                <GradeMenu placement='bottom-end' onSelect={setGrade}>
+              {prListItem.grade && prListItem.updateGrade &&
+                <GradeMenu placement='bottom-end' onSelect={(grade: Grade) => prListItem.updateGrade!(grade)}>
                     <GradeMenuDisclosure grade={prListItem.grade} />
                 </GradeMenu>
               }

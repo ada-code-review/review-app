@@ -5,7 +5,7 @@ export type Grade = 'green' | 'yellow' | 'red';
 
 export interface GradeData {
     grade: Grade,
-    commentUrl: string | null, // TODO: this should not be null
+    commentUrl: string,
 }
 
 export interface AllGradeData {
