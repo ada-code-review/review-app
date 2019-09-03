@@ -83,7 +83,7 @@ List of endpoints were used to support the existing functionality _or_ would lik
 |Add a user to a PR as an assignee|Not implemented (assign PR to volunteer)|POST https://api.github.com/repos/:owner/:repo/issues/:issue_number/assignees|
 
 ### Hooks and Data
-We created some custom hooks to fetch data from github.  In a functional component you can get data using:
+We created some custom hooks to fetch data from github. In a functional component, you can get data using:
 ```
 const {data, error, isLoading} = useFetchFromGithub<TypeScriptDataInterface>(path);
 return (
@@ -91,7 +91,7 @@ return (
 )
 ```
 
-This will handle inclduing the auth tokens.  Then just use the `data`, `error`, and `isLoading` values in the JSX as usual.  To post data back to github, use `fetchFromGithub` (note that this is not a hook) in a callback:
+This will handle including the auth tokens. Then just use the `data`, `error`, and `isLoading` values in the JSX as usual. To post data back to github, use `fetchFromGithub` (note that this is not a hook) in a callback:
 
 ```
 const onClick = () => {
