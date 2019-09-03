@@ -82,6 +82,31 @@ List of endpoints were used to support the existing functionality _or_ would lik
 |Assign user to teams in org|Not implemented (assign PR to volunteer)|**To get team id:** <br>GET https://api.github.com/orgs/ada-code-review/teams/:team_slug. <br>**To add user:**<br> PUT https://api.github.com/teams/:team_id/memberships/:username|
 |Add a user to a PR as an assignee|Not implemented (assign PR to volunteer)|POST https://api.github.com/repos/:owner/:repo/issues/:issue_number/assignees|
 
+### Hooks and Data
+We created some custom hooks to fetch data from github.  In a functional component you can get data using:
+```
+const {data, error, isLoading} = useFetchFromGithub<TypeScriptDataInterface>(path);
+return (
+    <div>{JSON.stringify(data)}</div>
+)
+```
+
+This will handle inclduing the auth tokens.  Then just use the `data`, `error`, and `isLoading` values in the JSX as usual.  To post data back to github, use `fetchFromGithub` (note that this is not a hook) in a callback:
+
+```
+const onClick = () => {
+    fetchFromGithub(path, {
+        method: `POST`,
+        body: {id: 1, value: 'New Value!'}
+    })
+    .then(response => { /* respond */ })
+    .catch(error => { /* rescue */ })
+}
+return <button onClick={onClick}>Update</button>
+```
+
+This will return a promise that can be chained, calling either more API calls, updating local state, or navigating to another page.
+
 # Boilerplate from Create React App
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
