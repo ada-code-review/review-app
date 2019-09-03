@@ -18,8 +18,6 @@ function fetchFromGithub<T>(url: string, options?: RequestInit, accessToken?: St
         authorization: `Bearer ${accessToken || userStoreApi.getState().accessToken}`
     };
 
-    // TODO: if the endpoint returns a non-200, this will return the error response
-    // instead of throwing
     return fetch(GITHUB_BASE_URL + url, options)
         .then((response) => {
             return response.json()

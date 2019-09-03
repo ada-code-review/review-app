@@ -198,7 +198,6 @@ const CommentIndicator: React.FC<{ hasComment: boolean, refreshData: () => void 
     </CommentIndicatorRoot>
 );
 
-// TODO: fill out this component
 const GradeSelector: React.FC<{ grade: Grade | null, onChange: (newGrade: Grade) => void}> = ({ grade, onChange }) => (
     <GradeMenu onSelect={onChange} placement='auto'>
         <LabeledGradeMenuDisclosure grade={grade} />
@@ -253,8 +252,9 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({ match }) => {
         setFeedbackFormText(e.target.value);
     };
 
-    // TODO: make these do something
+    // TODO: this should pull down the data from github again
     const refreshData = () => undefined;
+
     const submitFormData = () => {
         if (!prData || !grade) {
             return;
